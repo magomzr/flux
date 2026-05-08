@@ -465,6 +465,150 @@
           }
         }
       ]
+    },
+    {
+      "name": "Billing",
+      "item": [
+        {
+          "name": "Crear plan — Free",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/plans",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"free\",\n  \"name\": \"Free\",\n  \"maxFlags\": 10,\n  \"maxProjects\": 1,\n  \"maxEnvironments\": 2,\n  \"maxEvaluationsMonth\": 50000,\n  \"maxAssetStorageMb\": 100,\n  \"hasSse\": false,\n  \"pollIntervalSeconds\": 60,\n  \"priceUsd\": 0\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear plan — Standard",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/plans",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"standard\",\n  \"name\": \"Standard\",\n  \"maxFlags\": 100,\n  \"maxProjects\": 5,\n  \"maxEnvironments\": 5,\n  \"maxEvaluationsMonth\": 1000000,\n  \"maxAssetStorageMb\": 1000,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 10,\n  \"priceUsd\": 2900\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear plan — Pro",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/plans",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"pro\",\n  \"name\": \"Pro\",\n  \"maxFlags\": null,\n  \"maxProjects\": null,\n  \"maxEnvironments\": null,\n  \"maxEvaluationsMonth\": null,\n  \"maxAssetStorageMb\": null,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 5,\n  \"priceUsd\": 9900\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar planes",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/plans"
+          }
+        },
+        {
+          "name": "Obtener plan",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/plans/standard"
+          }
+        },
+        {
+          "name": "Calcular costo estimado",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/billing/estimate?evaluationsMonth=200000&assetStorageMb=500",
+              "host": ["{{baseUrl}}"],
+              "path": ["billing", "estimate"],
+              "query": [
+                { "key": "evaluationsMonth", "value": "200000" },
+                { "key": "assetStorageMb", "value": "500" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Suscribir tenant a Free",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/subscribe",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"free\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Cambiar a plan Standard",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/subscribe",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"planId\": \"standard\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Obtener suscripción activa",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/subscription"
+          }
+        },
+        {
+          "name": "Historial de suscripciones",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/subscriptions"
+          }
+        },
+        {
+          "name": "Uso del mes actual",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/usage"
+          }
+        },
+        {
+          "name": "Historial de uso",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/usage/history"
+          }
+        }
+      ]
     }
   ]
 }

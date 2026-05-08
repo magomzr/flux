@@ -34,7 +34,7 @@
 - [x] `flags` — CRUD, tipos (boolean/string/number/json), valores por ambiente
 - [x] `flag-values` — estado por ambiente, rollout percentage, publishedAt/publishedBy
 - [ ] `assets` — upload, storage en R2/S3, URLs firmadas, relación con tenant
-- [ ] `billing` — planes, suscripciones, registro de uso, calculadora de costos
+- [x] `billing` — planes, suscripciones, registro de uso, calculadora de costos
 - [ ] `delivery` — cache en memoria, evaluación de flags, REST polling, SSE
 - [x] `audit` — log inmutable de acciones del dashboard
 

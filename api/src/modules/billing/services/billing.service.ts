@@ -1,0 +1,208 @@
+import {
+  ConflictException,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { and, desc, eq, isNull, or, gt } from 'drizzle-orm';
+import { plans, tenantSubscriptions, usageRecords } from '../../../db/schema';
+import { CreatePlanDto } from '../dto/create-plan.dto';
+import { SubscribeDto } from '../dto/subscribe.dto';
+import type { CostEstimateDto } from '../dto/cost-estimate.dto';
+import type { Db } from '../../../db';
+
+// Precios de overage en centavos (USD)
+const OVERAGE = {
+  evaluationsPer1k: 1,    // $0.01 por cada 1000 evaluaciones extra
+  sseConnectionPerDay: 5, // $0.05 por conexión SSE máxima al día
+  storageMbPerMonth: 2,   // $0.02 por MB extra al mes
+} as const;
+
+@Injectable()
+export class BillingService {
+  constructor(@Inject('DB') private readonly db: Db) {}
+
+  // ─── Plans ────────────────────────────────────────────────────────────────────
+
+  async createPlan(dto: CreatePlanDto) {
+    const existing = await this.db.query.plans.findFirst({
+      where: eq(plans.id, dto.id),
+    });
+
+    if (existing) {
+      throw new ConflictException(`Plan "${dto.id}" already exists`);
+    }
+
+    const [plan] = await this.db
+      .insert(plans)
+      .values({
+        id: dto.id,
+        name: dto.name,
+        maxFlags: dto.maxFlags ?? null,
+        maxProjects: dto.maxProjects ?? null,
+        maxEnvironments: dto.maxEnvironments ?? null,
+        maxEvaluationsMonth: dto.maxEvaluationsMonth ?? null,
+        maxAssetStorageMb: dto.maxAssetStorageMb ?? null,
+        hasSse: dto.hasSse ?? false,
+        pollIntervalSeconds: dto.pollIntervalSeconds ?? 60,
+        priceUsd: dto.priceUsd ?? 0,
+      })
+      .returning();
+
+    return plan;
+  }
+
+  async findAllPlans() {
+    return this.db.query.plans.findMany();
+  }
+
+  async findPlan(id: string) {
+    const plan = await this.db.query.plans.findFirst({
+      where: eq(plans.id, id),
+    });
+
+    if (!plan) throw new NotFoundException(`Plan "${id}" not found`);
+
+    return plan;
+  }
+
+  // ─── Subscriptions ────────────────────────────────────────────────────────────
+
+  /**
+   * Suscribe un tenant a un plan.
+   * Cierra la suscripción activa anterior (si existe) y abre una nueva.
+   */
+  async subscribe(tenantId: string, dto: SubscribeDto) {
+    await this.findPlan(dto.planId); // valida que el plan exista
+
+    const active = await this.getActiveSubscription(tenantId);
+
+    if (active?.planId === dto.planId) {
+      throw new ConflictException(
+        `Tenant is already on plan "${dto.planId}"`,
+      );
+    }
+
+    // Cerrar suscripción activa
+    if (active) {
+      await this.db
+        .update(tenantSubscriptions)
+        .set({ endsAt: new Date() })
+        .where(eq(tenantSubscriptions.id, active.id));
+    }
+
+    const [subscription] = await this.db
+      .insert(tenantSubscriptions)
+      .values({ tenantId, planId: dto.planId })
+      .returning();
+
+    return subscription;
+  }
+
+  async getActiveSubscription(tenantId: string) {
+    const now = new Date();
+
+    return this.db.query.tenantSubscriptions.findFirst({
+      where: and(
+        eq(tenantSubscriptions.tenantId, tenantId),
+        or(
+          isNull(tenantSubscriptions.endsAt),
+          gt(tenantSubscriptions.endsAt, now),
+        ),
+      ),
+      orderBy: desc(tenantSubscriptions.startedAt),
+    });
+  }
+
+  async getSubscriptionHistory(tenantId: string) {
+    return this.db.query.tenantSubscriptions.findMany({
+      where: eq(tenantSubscriptions.tenantId, tenantId),
+      orderBy: desc(tenantSubscriptions.startedAt),
+    });
+  }
+
+  /**
+   * Devuelve el plan activo del tenant junto con los límites.
+   * Útil para que delivery y flags verifiquen límites.
+   */
+  async getActivePlan(tenantId: string) {
+    const subscription = await this.getActiveSubscription(tenantId);
+
+    if (!subscription) return null;
+
+    return this.findPlan(subscription.planId);
+  }
+
+  // ─── Usage ────────────────────────────────────────────────────────────────────
+
+  async getCurrentUsage(tenantId: string) {
+    const now = new Date();
+    const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    return this.db.query.usageRecords.findFirst({
+      where: and(
+        eq(usageRecords.tenantId, tenantId),
+        eq(usageRecords.periodStart, periodStart),
+      ),
+    });
+  }
+
+  async getUsageHistory(tenantId: string) {
+    return this.db.query.usageRecords.findMany({
+      where: eq(usageRecords.tenantId, tenantId),
+      orderBy: desc(usageRecords.periodStart),
+    });
+  }
+
+  // ─── Cost calculator ──────────────────────────────────────────────────────────
+
+  /**
+   * Calcula el costo estimado mensual para un tenant dado su uso proyectado.
+   * Compara contra todos los planes disponibles.
+   */
+  async calculateCost(dto: CostEstimateDto) {
+    const allPlans = await this.findAllPlans();
+
+    return allPlans.map((plan) => {
+      const baseCostUsd = plan.priceUsd / 100;
+      let overageCostUsd = 0;
+      const breakdown: Record<string, number> = {};
+
+      // Evaluaciones extra
+      const evalUsage = dto.evaluationsMonth ?? 0;
+      if (plan.maxEvaluationsMonth !== null && evalUsage > plan.maxEvaluationsMonth) {
+        const extra = evalUsage - plan.maxEvaluationsMonth;
+        const cost = Math.ceil(extra / 1000) * (OVERAGE.evaluationsPer1k / 100);
+        overageCostUsd += cost;
+        breakdown['evaluations_overage_usd'] = cost;
+      }
+
+      // SSE connections
+      const sseUsage = dto.sseConnectionsMax ?? 0;
+      if (!plan.hasSse && sseUsage > 0) {
+        breakdown['sse_not_available'] = 0;
+        breakdown['sse_note'] = 0; // plan no incluye SSE
+      }
+
+      // Storage extra
+      const storageUsage = dto.assetStorageMb ?? 0;
+      if (plan.maxAssetStorageMb !== null && storageUsage > plan.maxAssetStorageMb) {
+        const extra = storageUsage - plan.maxAssetStorageMb;
+        const cost = extra * (OVERAGE.storageMbPerMonth / 100);
+        overageCostUsd += cost;
+        breakdown['storage_overage_usd'] = cost;
+      }
+
+      return {
+        planId: plan.id,
+        planName: plan.name,
+        baseCostUsd,
+        overageCostUsd: Math.round(overageCostUsd * 100) / 100,
+        totalCostUsd: Math.round((baseCostUsd + overageCostUsd) * 100) / 100,
+        hasSse: plan.hasSse,
+        pollIntervalSeconds: plan.pollIntervalSeconds,
+        breakdown,
+      };
+    });
+  }
+}

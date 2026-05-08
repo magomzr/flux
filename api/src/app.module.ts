@@ -11,6 +11,7 @@ import { ProjectsModule } from './modules/projects/projects.module';
 import { EnvironmentsModule } from './modules/environments/environments.module';
 import { FlagsModule } from './modules/flags/flags.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { TenantModule } from './common/tenant/tenant.module';
 
 @Module({
@@ -24,6 +25,7 @@ import { TenantModule } from './common/tenant/tenant.module';
     ProjectsModule,
     EnvironmentsModule,
     FlagsModule,
+    BillingModule,
   ],
   controllers: [HealthController],
   providers: [
