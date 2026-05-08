@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { HealthController } from './modules/health/health.controller';
 import { DbModule } from './db/db.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
+import { ProjectsModule } from './modules/projects/projects.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
     DbModule,
     AuthModule,
     TenantsModule,
+    ProjectsModule,
   ],
   controllers: [HealthController],
   providers: [

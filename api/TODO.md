@@ -28,7 +28,7 @@
 ## 🔲 Pendiente
 
 ### Módulos por construir
-- [ ] `projects` — CRUD, relación con tenant
+- [x] `projects` — CRUD, relación con tenant
 - [ ] `environments` — CRUD, relación con project, color, isDefault
 - [ ] `sdk-api-keys` — generación, hash, rotación de keys por ambiente
 - [ ] `flags` — CRUD, tipos (boolean/string/number/json), valores por ambiente
@@ -41,7 +41,7 @@
 ### Auth / usuarios
 - [ ] Endpoint `POST /auth/logout` probado end-to-end
 - [ ] Cleanup periódico de refresh tokens expirados (cron job)
-- [ ] Seed inicial: crear usuario `super_admin` para arrancar el sistema
+- [x] Seed inicial: usuario `super_admin` insertado manualmente en DB (mario@flux.com)
 - [ ] DTO y validación para login (`class-validator`)
 
 ### SDK API (dentro de `delivery`)
