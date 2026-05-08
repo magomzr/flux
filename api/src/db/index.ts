@@ -1,0 +1,11 @@
+// src/db/index.ts
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import * as schema from './schema';
+
+export type Db = ReturnType<typeof drizzle<typeof schema>>;
+
+export const createDb = (url: string) => {
+  const client = postgres(url);
+  return drizzle(client, { schema });
+};
