@@ -16,11 +16,15 @@ import { CreateProjectDto } from '../dto/create-project.dto';
 import { UpdateProjectDto } from '../dto/update-project.dto';
 import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../../../common/guards/permissions.guard';
+import { TenantGuard } from '../../../common/guards/tenant.guard';
 import { RequirePerms } from '../../../common/decorators/permissions.decorator';
+import { TenantResource } from '../../../common/decorators/tenant-resource.decorator';
 import { Perm } from '../../../common/config/roles.config';
 
+// El param 'tenantId' en la ruta ya es el tenantId → verificación directa
 @Controller('tenants/:tenantId/projects')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
+@UseGuards(JwtAuthGuard, PermissionsGuard, TenantGuard)
+@TenantResource({ param: 'tenantId' })
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
 

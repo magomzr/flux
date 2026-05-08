@@ -8,14 +8,18 @@ import { HealthController } from './modules/health/health.controller';
 import { DbModule } from './db/db.module';
 import { TenantsModule } from './modules/tenants/tenants.module';
 import { ProjectsModule } from './modules/projects/projects.module';
+import { EnvironmentsModule } from './modules/environments/environments.module';
+import { TenantModule } from './common/tenant/tenant.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DbModule,
+    TenantModule,
     AuthModule,
     TenantsModule,
     ProjectsModule,
+    EnvironmentsModule,
   ],
   controllers: [HealthController],
   providers: [

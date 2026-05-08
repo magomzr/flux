@@ -29,7 +29,7 @@
 
 ### Módulos por construir
 - [x] `projects` — CRUD, relación con tenant
-- [ ] `environments` — CRUD, relación con project, color, isDefault
+- [x] `environments` — CRUD, relación con project, color, isDefault
 - [ ] `sdk-api-keys` — generación, hash, rotación de keys por ambiente
 - [ ] `flags` — CRUD, tipos (boolean/string/number/json), valores por ambiente
 - [ ] `flag-values` — estado por ambiente, rollout percentage, publishedAt/publishedBy

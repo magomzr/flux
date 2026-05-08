@@ -61,14 +61,11 @@ export class ProjectsService {
   }
 
   async update(id: string, dto: UpdateProjectDto) {
-    await this.findOne(id); // lanza NotFoundException si no existe
+    await this.findOne(id);
 
     const [updated] = await this.db
       .update(projects)
-      .set({
-        ...dto,
-        updatedAt: new Date(),
-      })
+      .set({ ...dto, updatedAt: new Date() })
       .where(eq(projects.id, id))
       .returning();
 
