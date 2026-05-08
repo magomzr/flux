@@ -4,6 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { and, eq } from 'drizzle-orm';
 import { CreateFlagDto } from '../dto/create-flag.dto';
 import { UpdateFlagDto } from '../dto/update-flag.dto';
@@ -11,7 +12,9 @@ import { UpdateFlagValueDto } from '../dto/update-flag-value.dto';
 import { environments, flagValues, flags } from '../../../db/schema';
 import { AuditService } from '../../audit/services/audit.service';
 import { AuditAction } from '../../audit/audit.types';
+import { FLAG_CHANGED_EVENT } from '../../delivery/delivery.types';
 import type { AuditContext } from '../../audit/audit.types';
+import type { FlagChangedEvent } from '../../delivery/delivery.types';
 import type { Db } from '../../../db';
 
 @Injectable()
@@ -19,6 +22,7 @@ export class FlagsService {
   constructor(
     @Inject('DB') private readonly db: Db,
     private readonly audit: AuditService,
+    private readonly events: EventEmitter2,
   ) {}
 
   async create(projectId: string, dto: CreateFlagDto, ctx: AuditContext) {
@@ -43,7 +47,6 @@ export class FlagsService {
       })
       .returning();
 
-    // Crear flag_value para cada ambiente del proyecto
     const projectEnvironments = await this.db.query.environments.findMany({
       where: eq(environments.projectId, projectId),
       columns: { id: true },
@@ -82,9 +85,7 @@ export class FlagsService {
       with: { flagValues: true },
     });
 
-    if (!flag) {
-      throw new NotFoundException(`Flag ${id} not found`);
-    }
+    if (!flag) throw new NotFoundException(`Flag ${id} not found`);
 
     return flag;
   }
@@ -174,6 +175,9 @@ export class FlagsService {
       },
     });
 
+    // Invalidar cache del ambiente afectado
+    this.emitFlagChanged(environmentId);
+
     return updated;
   }
 
@@ -207,6 +211,16 @@ export class FlagsService {
       metadata: { flagId, environmentId, enabled: before.enabled },
     });
 
+    // Invalidar cache y notificar SSE
+    this.emitFlagChanged(environmentId, before.id);
+
     return updated;
+  }
+
+  // ─── Privados ─────────────────────────────────────────────────────────────────
+
+  private emitFlagChanged(environmentId: string, flagKey?: string): void {
+    const event: FlagChangedEvent = { environmentId, flagKey };
+    this.events.emit(FLAG_CHANGED_EVENT, event);
   }
 }

@@ -1,0 +1,7 @@
+# Configuración local con credenciales — nunca commitear
+config.local.js
+
+# Resultados de k6
+results/
+*.json
+summary.html

@@ -9,7 +9,9 @@
     { "key": "tenantId", "value": "" },
     { "key": "projectId", "value": "" },
     { "key": "environmentId", "value": "" },
-    { "key": "flagId", "value": "" }
+    { "key": "flagId", "value": "" },
+    { "key": "sdkApiKey", "value": "" },
+    { "key": "flagsEtag", "value": "" }
   ],
   "item": [
     {
@@ -35,10 +37,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/auth/login",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"mario@flux.com\",\n  \"password\": \"admin123\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"mario@flux.com\",\n  \"password\": \"admin123\"\n}" }
           }
         },
         {
@@ -47,10 +46,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/auth/refresh",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"PEGA_AQUI_EL_REFRESH_TOKEN\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"PEGA_AQUI_EL_REFRESH_TOKEN\"\n}" }
           }
         },
         {
@@ -59,10 +55,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/auth/logout",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"refreshToken\": \"PEGA_AQUI_EL_REFRESH_TOKEN\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"refreshToken\": \"PEGA_AQUI_EL_REFRESH_TOKEN\"\n}" }
           }
         }
       ]
@@ -93,10 +86,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/tenants",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Acme Corp\",\n  \"slug\": \"acme\",\n  \"email\": \"admin@acme.com\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Acme Corp\",\n  \"slug\": \"acme\",\n  \"email\": \"admin@acme.com\"\n}" }
           }
         },
         {
@@ -124,10 +114,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/tenants/{{tenantId}}",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Acme Corp Updated\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Acme Corp Updated\"\n}" }
           }
         },
         {
@@ -174,10 +161,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/tenants/{{tenantId}}/projects",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"App Móvil\",\n  \"slug\": \"app-movil\",\n  \"description\": \"Proyecto principal de la app iOS/Android\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"App Móvil\",\n  \"slug\": \"app-movil\",\n  \"description\": \"Proyecto principal de la app iOS/Android\"\n}" }
           }
         },
         {
@@ -205,10 +189,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/tenants/{{tenantId}}/projects/{{projectId}}",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"App Móvil v2\",\n  \"description\": \"Descripción actualizada\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"App Móvil v2\",\n  \"description\": \"Descripción actualizada\"\n}" }
           }
         },
         {
@@ -255,10 +236,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/projects/{{projectId}}/environments",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Production\",\n  \"slug\": \"production\",\n  \"color\": \"#ef4444\",\n  \"isDefault\": false\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Production\",\n  \"slug\": \"production\",\n  \"color\": \"#ef4444\",\n  \"isDefault\": false\n}" }
           }
         },
         {
@@ -270,10 +248,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/projects/{{projectId}}/environments",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Staging\",\n  \"slug\": \"staging\",\n  \"color\": \"#f59e0b\",\n  \"isDefault\": false\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Staging\",\n  \"slug\": \"staging\",\n  \"color\": \"#f59e0b\",\n  \"isDefault\": false\n}" }
           }
         },
         {
@@ -285,10 +260,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/projects/{{projectId}}/environments",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Development\",\n  \"slug\": \"development\",\n  \"color\": \"#22c55e\",\n  \"isDefault\": true\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Development\",\n  \"slug\": \"development\",\n  \"color\": \"#22c55e\",\n  \"isDefault\": true\n}" }
           }
         },
         {
@@ -316,10 +288,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/projects/{{projectId}}/environments/{{environmentId}}",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"color\": \"#3b82f6\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"color\": \"#3b82f6\"\n}" }
           }
         },
         {
@@ -358,10 +327,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/projects/{{projectId}}/flags",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"key\": \"new_checkout_flow\",\n  \"name\": \"New Checkout Flow\",\n  \"description\": \"Activa el nuevo flujo de pago\",\n  \"type\": \"boolean\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"key\": \"new_checkout_flow\",\n  \"name\": \"New Checkout Flow\",\n  \"description\": \"Activa el nuevo flujo de pago\",\n  \"type\": \"boolean\"\n}" }
           }
         },
         {
@@ -373,10 +339,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/projects/{{projectId}}/flags",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"key\": \"banner_text\",\n  \"name\": \"Banner Text\",\n  \"description\": \"Texto del banner principal\",\n  \"type\": \"string\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"key\": \"banner_text\",\n  \"name\": \"Banner Text\",\n  \"description\": \"Texto del banner principal\",\n  \"type\": \"string\"\n}" }
           }
         },
         {
@@ -388,10 +351,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/projects/{{projectId}}/flags",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"key\": \"theme_config\",\n  \"name\": \"Theme Config\",\n  \"description\": \"Configuración del tema visual\",\n  \"type\": \"json\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"key\": \"theme_config\",\n  \"name\": \"Theme Config\",\n  \"description\": \"Configuración del tema visual\",\n  \"type\": \"json\"\n}" }
           }
         },
         {
@@ -419,10 +379,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"New Checkout Flow (updated)\",\n  \"description\": \"Descripción actualizada\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"New Checkout Flow (updated)\",\n  \"description\": \"Descripción actualizada\"\n}" }
           }
         },
         {
@@ -450,10 +407,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}/values/{{environmentId}}",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"enabled\": true\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"enabled\": true\n}" }
           }
         },
         {
@@ -462,6 +416,115 @@
             "method": "POST",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}/values/{{environmentId}}/publish"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SDK Keys",
+      "item": [
+        {
+          "name": "Generar SDK key",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.key) {",
+                  "  pm.collectionVariables.set('sdkApiKey', res.key);",
+                  "  console.log('✅ sdkApiKey guardada:', res.key);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments/{{environmentId}}/keys",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Android prod key\"\n}" }
+          }
+        },
+        {
+          "name": "Listar SDK keys del ambiente",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments/{{environmentId}}/keys"
+          }
+        },
+        {
+          "name": "Revocar SDK key",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments/{{environmentId}}/keys/SDK_KEY_ID_AQUI/revoke"
+          }
+        },
+        {
+          "name": "Eliminar SDK key (permanente)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments/{{environmentId}}/keys/SDK_KEY_ID_AQUI"
+          }
+        }
+      ]
+    },
+    {
+      "name": "SDK (Delivery)",
+      "item": [
+        {
+          "name": "GET /sdk/flags — todos los flags",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const etag = pm.response.headers.get('ETag');",
+                  "if (etag) {",
+                  "  pm.collectionVariables.set('flagsEtag', etag);",
+                  "  console.log('✅ ETag guardado:', etag);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Api-Key", "value": "{{sdkApiKey}}" }],
+            "url": "{{baseUrl}}/sdk/flags"
+          }
+        },
+        {
+          "name": "GET /sdk/flags — conditional (304 si no cambió)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "X-Api-Key", "value": "{{sdkApiKey}}" },
+              { "key": "If-None-Match", "value": "{{flagsEtag}}" }
+            ],
+            "url": "{{baseUrl}}/sdk/flags"
+          }
+        },
+        {
+          "name": "GET /sdk/flags/:key — flag específico",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Api-Key", "value": "{{sdkApiKey}}" }],
+            "url": "{{baseUrl}}/sdk/flags/new_checkout_flow"
+          }
+        },
+        {
+          "name": "GET /sdk/stream — SSE (plan standard+)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "X-Api-Key", "value": "{{sdkApiKey}}" }],
+            "url": "{{baseUrl}}/sdk/stream"
           }
         }
       ]
@@ -478,10 +541,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/plans",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"id\": \"free\",\n  \"name\": \"Free\",\n  \"maxFlags\": 10,\n  \"maxProjects\": 1,\n  \"maxEnvironments\": 2,\n  \"maxEvaluationsMonth\": 50000,\n  \"maxAssetStorageMb\": 100,\n  \"hasSse\": false,\n  \"pollIntervalSeconds\": 60,\n  \"priceUsd\": 0\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"id\": \"free\",\n  \"name\": \"Free\",\n  \"maxFlags\": 10,\n  \"maxProjects\": 1,\n  \"maxEnvironments\": 2,\n  \"maxEvaluationsMonth\": 50000,\n  \"maxAssetStorageMb\": 100,\n  \"hasSse\": false,\n  \"pollIntervalSeconds\": 60,\n  \"priceUsd\": 0\n}" }
           }
         },
         {
@@ -493,10 +553,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/plans",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"id\": \"standard\",\n  \"name\": \"Standard\",\n  \"maxFlags\": 100,\n  \"maxProjects\": 5,\n  \"maxEnvironments\": 5,\n  \"maxEvaluationsMonth\": 1000000,\n  \"maxAssetStorageMb\": 1000,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 10,\n  \"priceUsd\": 2900\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"id\": \"standard\",\n  \"name\": \"Standard\",\n  \"maxFlags\": 100,\n  \"maxProjects\": 5,\n  \"maxEnvironments\": 5,\n  \"maxEvaluationsMonth\": 1000000,\n  \"maxAssetStorageMb\": 1000,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 10,\n  \"priceUsd\": 2900\n}" }
           }
         },
         {
@@ -508,10 +565,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/plans",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"id\": \"pro\",\n  \"name\": \"Pro\",\n  \"maxFlags\": null,\n  \"maxProjects\": null,\n  \"maxEnvironments\": null,\n  \"maxEvaluationsMonth\": null,\n  \"maxAssetStorageMb\": null,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 5,\n  \"priceUsd\": 9900\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"id\": \"pro\",\n  \"name\": \"Pro\",\n  \"maxFlags\": null,\n  \"maxProjects\": null,\n  \"maxEnvironments\": null,\n  \"maxEvaluationsMonth\": null,\n  \"maxAssetStorageMb\": null,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 5,\n  \"priceUsd\": 9900\n}" }
           }
         },
         {
@@ -555,10 +609,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/subscribe",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"free\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"planId\": \"free\"\n}" }
           }
         },
         {
@@ -570,10 +621,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/subscribe",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"planId\": \"standard\"\n}"
-            }
+            "body": { "mode": "raw", "raw": "{\n  \"planId\": \"standard\"\n}" }
           }
         },
         {

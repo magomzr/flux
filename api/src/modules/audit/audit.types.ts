@@ -30,6 +30,11 @@ export const AuditAction = {
   // Auth
   AUTH_LOGIN: 'auth.login',
   AUTH_LOGOUT: 'auth.logout',
+
+  // SDK Keys
+  SDK_KEY_CREATED: 'sdk_key.created',
+  SDK_KEY_REVOKED: 'sdk_key.revoked',
+  SDK_KEY_DELETED: 'sdk_key.deleted',
 } as const;
 
 export type AuditActionType = (typeof AuditAction)[keyof typeof AuditAction];
