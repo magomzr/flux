@@ -54,6 +54,8 @@
 - [x] `.env.example` actualizado con todas las variables actuales
 - [ ] Seed script reproducible para `super_admin` (en lugar de INSERT manual)
 - [ ] Dockerfile + docker-compose/podman-compose para desarrollo local
+- [ ] `POST /tenants` — al crear un tenant, crear automáticamente un usuario `tenant_admin` con email y password definidos por el `super_admin` en el mismo request. Devolver las credenciales en la respuesta (solo una vez).
+- [ ] `GET/POST /tenants/:tenantId/users` — CRUD de usuarios por tenant (para gestión desde el dashboard)
 
 ### Post-MVP
 - [ ] `assets` — upload, storage en R2/S3, URLs firmadas

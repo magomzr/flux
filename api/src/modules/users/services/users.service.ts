@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import type { Db } from '../../../db';
 import { users } from '../../../db/schema';
 import { ROLE_PERMISSIONS } from '../../../common/config/roles.config';
-import { Login } from '../../../interfaces/login';
+import { LoginDto } from '../../auth/dto/login.dto';
 
 @Injectable()
 export class UsersService {
@@ -24,7 +24,7 @@ export class UsersService {
     return ROLE_PERMISSIONS[role] ?? [];
   }
 
-  public async validateCredentials(dto: Login) {
+  public async validateCredentials(dto: LoginDto) {
     const user = await this.findByEmail(dto.email);
     if (!user) throw new UnauthorizedException('Invalid credentials');
 

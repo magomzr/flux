@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+/* ─── Design tokens ──────────────────────────────────────────────────────────
+   Single source of truth for colors. Components use these variables,
+   never raw Tailwind color classes like bg-zinc-900 or text-white.
+   Toggle .dark on <html> to switch themes.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* Canvas */
+  --bg-app:         #f8f8f8;
+  --bg-surface:     #ffffff;
+  --bg-elevated:    #f1f1f1;
+  --bg-overlay:     rgba(0,0,0,0.35);
+
+  /* Borders */
+  --border:         #e2e2e2;
+  --border-subtle:  #ebebeb;
+
+  /* Text */
+  --text-primary:   #1a1a1a;
+  --text-secondary: #5c5c5c;
+  --text-muted:     #999999;
+  --text-disabled:  #cccccc;
+  --text-inverse:   #ffffff;
+
+  /* Accent — violet/indigo */
+  --accent:         #5b5bd6;
+  --accent-hover:   #4747c2;
+  --accent-subtle:  #ededfc;
+  --accent-text:    #5b5bd6;
+  --accent-fg:      #ffffff;
+
+  /* Semantic */
+  --success:        #18794e;
+  --success-subtle: #e9f9ee;
+  --success-fg:     #18794e;
+  --warning:        #9e6c00;
+  --warning-subtle: #fef9c3;
+  --warning-fg:     #9e6c00;
+  --danger:         #cd2b31;
+  --danger-hover:   #b82429;
+  --danger-subtle:  #fff0f0;
+  --danger-fg:      #cd2b31;
+
+  /* Inputs */
+  --input-bg:       #ffffff;
+  --input-border:   #d4d4d4;
+  --input-focus:    #5b5bd6;
+  --placeholder:    #aaaaaa;
+
+  /* Sidebar */
+  --sidebar-bg:     #ffffff;
+  --sidebar-border: #e2e2e2;
+  --sidebar-hover:  #f4f4f4;
+  --sidebar-active-bg:   #ededfc;
+  --sidebar-active-text: #5b5bd6;
+
+  /* Table */
+  --table-header-bg: #fafafa;
+  --table-row-hover: #fafafa;
+  --table-border:    #ebebeb;
+
+  /* Badge */
+  --badge-neutral-bg:   #f1f1f1;
+  --badge-neutral-text: #5c5c5c;
+
+  /* Mono */
+  --mono-bg:   #f4f4f4;
+  --mono-text: #333333;
+
+  /* Skeleton */
+  --skeleton: #ebebeb;
+}
+
+.dark {
+  /* Canvas */
+  --bg-app:         #0c0c0e;
+  --bg-surface:     #141416;
+  --bg-elevated:    #1e1e22;
+  --bg-overlay:     rgba(0,0,0,0.65);
+
+  /* Borders */
+  --border:         #2a2a30;
+  --border-subtle:  #1e1e22;
+
+  /* Text */
+  --text-primary:   #f0f0f2;
+  --text-secondary: #9898a6;
+  --text-muted:     #606070;
+  --text-disabled:  #3a3a44;
+  --text-inverse:   #0c0c0e;
+
+  /* Accent */
+  --accent:         #7c7cfa;
+  --accent-hover:   #9898fb;
+  --accent-subtle:  #1a1a3e;
+  --accent-text:    #a5a5fc;
+  --accent-fg:      #ffffff;
+
+  /* Semantic */
+  --success:        #30a46c;
+  --success-subtle: #0d2b1d;
+  --success-fg:     #4cc38a;
+  --warning:        #f5a623;
+  --warning-subtle: #2a1d00;
+  --warning-fg:     #f5a623;
+  --danger:         #f2555a;
+  --danger-hover:   #ff8589;
+  --danger-subtle:  #2a0e0f;
+  --danger-fg:      #f2555a;
+
+  /* Inputs */
+  --input-bg:       #1e1e22;
+  --input-border:   #2e2e36;
+  --input-focus:    #7c7cfa;
+  --placeholder:    #4a4a58;
+
+  /* Sidebar */
+  --sidebar-bg:     #141416;
+  --sidebar-border: #2a2a30;
+  --sidebar-hover:  #1e1e22;
+  --sidebar-active-bg:   #1a1a3e;
+  --sidebar-active-text: #a5a5fc;
+
+  /* Table */
+  --table-header-bg: #141416;
+  --table-row-hover: #1a1a1e;
+  --table-border:    #2a2a30;
+
+  /* Badge */
+  --badge-neutral-bg:   #2a2a30;
+  --badge-neutral-text: #9898a6;
+
+  /* Mono */
+  --mono-bg:   #1e1e22;
+  --mono-text: #c8c8d4;
+
+  /* Skeleton */
+  --skeleton: #1e1e22;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────────*/
+
+html {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ─── Utility classes ────────────────────────────────────────────────────────
+   Use these in templates instead of raw Tailwind color classes.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@layer utilities {
+  .bg-app       { background-color: var(--bg-app); }
+  .bg-surface   { background-color: var(--bg-surface); }
+  .bg-elevated  { background-color: var(--bg-elevated); }
+
+  .border-base   { border-color: var(--border); }
+  .border-subtle { border-color: var(--border-subtle); }
+
+  .text-primary   { color: var(--text-primary); }
+  .text-secondary { color: var(--text-secondary); }
+  .text-muted     { color: var(--text-muted); }
+
+  .bg-accent        { background-color: var(--accent); }
+  .bg-accent-subtle { background-color: var(--accent-subtle); }
+  .text-accent      { color: var(--accent-text); }
+
+  .text-success { color: var(--success-fg); }
+  .bg-success-subtle { background-color: var(--success-subtle); }
+  .text-warning { color: var(--warning-fg); }
+  .bg-warning-subtle { background-color: var(--warning-subtle); }
+  .text-danger  { color: var(--danger-fg); }
+  .bg-danger-subtle { background-color: var(--danger-subtle); }
+
+  .skeleton { background-color: var(--skeleton); }
+}
