@@ -442,7 +442,7 @@
           }
         },
         {
-          "name": "Actualizar flag value (habilitar + rollout)",
+          "name": "Actualizar flag value (habilitar)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -452,7 +452,7 @@
             "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}/values/{{environmentId}}",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"enabled\": true,\n  \"rolloutPct\": 50\n}"
+              "raw": "{\n  \"enabled\": true\n}"
             }
           }
         },
