@@ -3,72 +3,62 @@
 ## ✅ Hecho
 
 ### Arquitectura y decisiones
-- [x] Definir arquitectura general (monolito modular → microservicios)
-- [x] Definir dos superficies: Dashboard API y SDK API
-- [x] Modelo multi-tenant con una sola DB (opción A)
+- [x] Arquitectura general (monolito modular → microservicios)
+- [x] Dos superficies: Dashboard API y SDK API
+- [x] Modelo multi-tenant con una sola DB
 - [x] Estrategia de extracción del módulo `delivery` a Go en el futuro
-- [x] Roles y permisos definidos en código (`permissions.constants.ts`)
+- [x] Roles y permisos definidos en código (`roles.config.ts`)
 - [x] Schema de DB completo en Drizzle (`schema.ts`)
-- [x] Estructura de módulos definida
 
 ### Infraestructura
 - [x] Postgres 17 corriendo en Podman
-- [x] `drizzle.config.ts` configurado
-- [x] Scripts `db:generate`, `db:migrate`, `db:studio` en `package.json`
+- [x] Drizzle configurado con scripts `db:generate`, `db:migrate`, `db:studio`
 - [x] Migration inicial aplicada
-- [x] `.env` configurado con llaves RS256, DATABASE_URL
+- [x] `.env` configurado con llaves RS256 y DATABASE_URL
 
 ### Módulos
 - [x] `auth` — login, refresh, logout, RS256, revocación de refresh tokens por familia
 - [x] `users` — validación de credenciales, resolución de permisos desde código
-- [x] `tenants` — CRUD completo, deactivate (soft), removePermanently (hard)
+- [x] `tenants` — CRUD completo, deactivate (soft), removePermanently (hard), audit
+- [x] `projects` — CRUD, relación con tenant, TenantGuard, audit
+- [x] `environments` — CRUD, color, isDefault, TenantGuard, audit
+- [x] `sdk-api-keys` — generación, hash bcrypt, revocación, invalidación de cache
+- [x] `flags` — CRUD, tipos (boolean/string/number/json), valores por ambiente, audit
+- [x] `flag-values` — enabled, value, publishedAt/publishedBy, audit
+- [x] `billing` — planes, suscripciones, uso mensual, forecast de costo, calculadora
+- [x] `delivery` — cache en memoria L1/L2, ETag, REST polling, SSE, usage counter
+- [x] `audit` — log inmutable, consulta por tenant/entidad/usuario
+
+### Guards y decorators
+- [x] `JwtAuthGuard` — verificación de JWT RS256
+- [x] `PermissionsGuard` — verificación de permisos desde el JWT
+- [x] `TenantGuard` + `@TenantResource` — ownership check centralizado
+- [x] `SdkApiKeyGuard` — autenticación por API key de ambiente
+- [x] `@RequirePerms`, `@CurrentUser`, `@Public` decorators
+
+### Performance
+- [x] Cache de flags en memoria con invalidación por eventos (EventEmitter2)
+- [x] Cache de API keys L1 (rawKey verificada) + L2 (por prefix)
+- [x] ETag + conditional GET (304) para polling eficiente
+- [x] Usage counter con batching en memoria (flush cada 30s)
+- [x] k6 load test: p95=7ms bajo spike de 200 VUs, 25k req/s
 
 ---
 
 ## 🔲 Pendiente
 
-### Módulos por construir
-- [x] `projects` — CRUD, relación con tenant
-- [x] `environments` — CRUD, relación con project, color, isDefault
-- [x] `sdk-api-keys` — generación, hash, rotación de keys por ambiente
-- [x] `flags` — CRUD, tipos (boolean/string/number/json), valores por ambiente
-- [x] `flag-values` — estado por ambiente, rollout percentage, publishedAt/publishedBy
-- [ ] `assets` — upload, storage en R2/S3, URLs firmadas, relación con tenant
-- [x] `billing` — planes, suscripciones, registro de uso, calculadora de costos
-- [x] `delivery` — cache en memoria, evaluación de flags, REST polling, SSE
-- [x] `audit` — log inmutable de acciones del dashboard
+### MVP — prioritario
+- [x] DTO y validación para login con `class-validator`
+- [x] Endpoint `POST /auth/logout` — verificar end-to-end
+- [x] Swagger/OpenAPI para Dashboard API (`/docs`)
+- [x] `.env.example` actualizado con todas las variables actuales
+- [ ] Seed script reproducible para `super_admin` (en lugar de INSERT manual)
+- [ ] Dockerfile + docker-compose/podman-compose para desarrollo local
 
-### Auth / usuarios
-- [ ] Endpoint `POST /auth/logout` probado end-to-end
+### Post-MVP
+- [ ] `assets` — upload, storage en R2/S3, URLs firmadas
+- [ ] Redis para invalidación de cache entre múltiples instancias
 - [ ] Cleanup periódico de refresh tokens expirados (cron job)
-- [x] Seed inicial: usuario `super_admin` insertado manualmente en DB (mario@flux.com)
-- [ ] DTO y validación para login (`class-validator`)
-
-### SDK API (dentro de `delivery`)
-- [ ] `GET /sdk/flags` — evaluación de todos los flags para un contexto
-- [ ] `GET /sdk/flags/:key` — evaluación de un flag específico
-- [ ] `SSE /sdk/stream` — notificaciones en tiempo real (plan standard+)
-- [ ] `SdkApiKeyGuard` — autenticación por API key de ambiente
-- [ ] `PlanGuard` — verificación de plan antes de permitir SSE
-- [ ] Cache en memoria por tenant/proyecto/ambiente con invalidación por eventos
-
-### Guards y decorators
-- [ ] `JwtAuthGuard` — verificación de JWT RS256
-- [ ] `PermissionsGuard` — verificación de permisos desde el JWT
-- [ ] `RequirePerms` decorator
-- [ ] `TenantContext` decorator — extrae tenantId del JWT
-- [ ] `CurrentUser` decorator — extrae usuario del JWT
-- [ ] `Public` decorator — marca endpoints sin auth (ya existe, verificar)
-
-### Infraestructura pendiente
-- [ ] Redis para cache y pub/sub de invalidación de flags
-- [ ] Configurar Cloudflare R2 o S3 para assets
-- [ ] Dockerfile y docker-compose para desarrollo
-- [ ] `.gitignore` revisado (llaves, .env, node_modules)
-- [ ] Variables de entorno documentadas en `.env.example`
-
-### Calidad y documentación
-- [ ] Actualizar README con avances
 - [ ] Tests del módulo `auth` (login, refresh, revocación)
 - [ ] Tests del módulo `tenants`
-- [ ] Configurar Swagger/OpenAPI para Dashboard API
+- [ ] Actualizar README con estado actual del proyecto

@@ -1,12 +1,42 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.enableCors();
-  await app.listen(3000);
-  console.log({ url: await app.getUrl() });
+
+  // ─── Swagger ────────────────────────────────────────────────────────────────
+  // Solo disponible fuera de producción
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('Flux API')
+      .setDescription('Dashboard API para gestión de feature flags multi-tenant')
+      .setVersion('0.1.0')
+      .addBearerAuth(
+        { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+        'JWT',
+      )
+      .addApiKey(
+        { type: 'apiKey', in: 'header', name: 'X-Api-Key' },
+        'SDK-Key',
+      )
+      .build();
+
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document, {
+      swaggerOptions: {
+        persistAuthorization: true, // mantiene el token entre recargas
+      },
+    });
+
+    console.log(`📖 Swagger disponible en http://localhost:${process.env.PORT ?? 3000}/docs`);
+  }
+
+  await app.listen(process.env.PORT ?? 3000);
+  console.log(`🚀 Server running at ${await app.getUrl()}`);
 }
 bootstrap();

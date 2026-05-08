@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
 import { and, eq, isNull } from 'drizzle-orm';
-import { Login } from '../../../interfaces/login';
+import { LoginDto } from '../dto/login.dto';
 import { UsersService } from '../../users/services/users.service';
 import { refreshTokens } from '../../../db/schema';
 import type { Db } from '../../../db';
@@ -16,7 +16,7 @@ export class AuthService {
     @Inject('DB') private readonly db: Db,
   ) {}
 
-  async login(dto: Login) {
+  async login(dto: LoginDto) {
     const user = await this.users.validateCredentials(dto);
     const permissions = this.users.getPermissions(user.role);
 
