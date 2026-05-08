@@ -7,7 +7,7 @@ import {
   timestamp,
   uuid,
 } from 'drizzle-orm/pg-core';
-import { sql } from 'drizzle-orm';
+import { relations, sql } from 'drizzle-orm';
 
 // ─── Tenants ────────────────────────────────────────────────────────────────
 
@@ -221,3 +221,17 @@ export const auditLogs = pgTable('audit_logs', {
   ip: text('ip'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
+
+// ─── Relations ────────────────────────────────────────────────────────────────
+
+export const flagsRelations = relations(flags, ({ many }) => ({
+  flagValues: many(flagValues),
+}));
+
+export const flagValuesRelations = relations(flagValues, ({ one }) => ({
+  flag: one(flags, { fields: [flagValues.flagId], references: [flags.id] }),
+  environment: one(environments, {
+    fields: [flagValues.environmentId],
+    references: [environments.id],
+  }),
+}));

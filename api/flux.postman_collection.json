@@ -1,0 +1,470 @@
+{
+  "info": {
+    "name": "Flux API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "tenantId", "value": "" },
+    { "key": "projectId", "value": "" },
+    { "key": "environmentId", "value": "" },
+    { "key": "flagId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.access_token) {",
+                  "  pm.collectionVariables.set('accessToken', res.access_token);",
+                  "  console.log('✅ accessToken guardado');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mario@flux.com\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Refresh token",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/refresh",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"PEGA_AQUI_EL_REFRESH_TOKEN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/logout",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"PEGA_AQUI_EL_REFRESH_TOKEN\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tenants",
+      "item": [
+        {
+          "name": "Crear tenant",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) {",
+                  "  pm.collectionVariables.set('tenantId', res.id);",
+                  "  console.log('✅ tenantId guardado:', res.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/tenants",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp\",\n  \"slug\": \"acme\",\n  \"email\": \"admin@acme.com\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar tenants",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants"
+          }
+        },
+        {
+          "name": "Obtener tenant",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}"
+          }
+        },
+        {
+          "name": "Actualizar tenant",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Corp Updated\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Desactivar tenant",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/deactivate"
+          }
+        },
+        {
+          "name": "Eliminar tenant (permanente)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Crear proyecto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) {",
+                  "  pm.collectionVariables.set('projectId', res.id);",
+                  "  console.log('✅ projectId guardado:', res.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/projects",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"App Móvil\",\n  \"slug\": \"app-movil\",\n  \"description\": \"Proyecto principal de la app iOS/Android\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar proyectos del tenant",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/projects"
+          }
+        },
+        {
+          "name": "Obtener proyecto",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/projects/{{projectId}}"
+          }
+        },
+        {
+          "name": "Actualizar proyecto",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/projects/{{projectId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"App Móvil v2\",\n  \"description\": \"Descripción actualizada\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Desactivar proyecto",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/projects/{{projectId}}/deactivate"
+          }
+        },
+        {
+          "name": "Eliminar proyecto (permanente)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/projects/{{projectId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Environments",
+      "item": [
+        {
+          "name": "Crear environment — Production",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) {",
+                  "  pm.collectionVariables.set('environmentId', res.id);",
+                  "  console.log('✅ environmentId guardado:', res.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Production\",\n  \"slug\": \"production\",\n  \"color\": \"#ef4444\",\n  \"isDefault\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear environment — Staging",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Staging\",\n  \"slug\": \"staging\",\n  \"color\": \"#f59e0b\",\n  \"isDefault\": false\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear environment — Development",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Development\",\n  \"slug\": \"development\",\n  \"color\": \"#22c55e\",\n  \"isDefault\": true\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar environments del proyecto",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments"
+          }
+        },
+        {
+          "name": "Obtener environment",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments/{{environmentId}}"
+          }
+        },
+        {
+          "name": "Actualizar environment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments/{{environmentId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"color\": \"#3b82f6\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar environment (permanente)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/environments/{{environmentId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Flags",
+      "item": [
+        {
+          "name": "Crear flag (boolean)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.id) {",
+                  "  pm.collectionVariables.set('flagId', res.id);",
+                  "  console.log('✅ flagId guardado:', res.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"new_checkout_flow\",\n  \"name\": \"New Checkout Flow\",\n  \"description\": \"Activa el nuevo flujo de pago\",\n  \"type\": \"boolean\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear flag (string)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"banner_text\",\n  \"name\": \"Banner Text\",\n  \"description\": \"Texto del banner principal\",\n  \"type\": \"string\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Crear flag (json)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"theme_config\",\n  \"name\": \"Theme Config\",\n  \"description\": \"Configuración del tema visual\",\n  \"type\": \"json\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Listar flags del proyecto",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags"
+          }
+        },
+        {
+          "name": "Obtener flag (con flag_values)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}"
+          }
+        },
+        {
+          "name": "Actualizar flag",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Checkout Flow (updated)\",\n  \"description\": \"Descripción actualizada\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Eliminar flag (permanente)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}"
+          }
+        },
+        {
+          "name": "Obtener flag value por ambiente",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}/values/{{environmentId}}"
+          }
+        },
+        {
+          "name": "Actualizar flag value (habilitar + rollout)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}/values/{{environmentId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"rolloutPct\": 50\n}"
+            }
+          }
+        },
+        {
+          "name": "Publicar flag en ambiente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/projects/{{projectId}}/flags/{{flagId}}/values/{{environmentId}}/publish"
+          }
+        }
+      ]
+    }
+  ]
+}

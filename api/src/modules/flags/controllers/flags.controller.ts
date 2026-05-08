@@ -1,0 +1,116 @@
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+import { FlagsService } from '../services/flags.service';
+import { CreateFlagDto } from '../dto/create-flag.dto';
+import { UpdateFlagDto } from '../dto/update-flag.dto';
+import { UpdateFlagValueDto } from '../dto/update-flag-value.dto';
+import { JwtAuthGuard } from '../../../common/guards/jwt-auth.guard';
+import { PermissionsGuard } from '../../../common/guards/permissions.guard';
+import { TenantGuard } from '../../../common/guards/tenant.guard';
+import { RequirePerms } from '../../../common/decorators/permissions.decorator';
+import { TenantResource } from '../../../common/decorators/tenant-resource.decorator';
+import { Perm } from '../../../common/config/roles.config';
+
+@Controller('projects/:projectId/flags')
+@UseGuards(JwtAuthGuard, PermissionsGuard, TenantGuard)
+export class FlagsController {
+  constructor(private readonly flagsService: FlagsService) {}
+
+  // ─── Flags CRUD ───────────────────────────────────────────────────────────────
+
+  @Post()
+  @RequirePerms(Perm.FLAG_WRITE)
+  @TenantResource({ param: 'projectId', via: 'project' })
+  create(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Body() dto: CreateFlagDto,
+  ) {
+    return this.flagsService.create(projectId, dto);
+  }
+
+  @Get()
+  @RequirePerms(Perm.FLAG_READ)
+  @TenantResource({ param: 'projectId', via: 'project' })
+  findAll(@Param('projectId', ParseUUIDPipe) projectId: string) {
+    return this.flagsService.findAllByProject(projectId);
+  }
+
+  @Get(':id')
+  @RequirePerms(Perm.FLAG_READ)
+  @TenantResource({ param: 'id', via: 'flag' })
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.flagsService.findOne(id);
+  }
+
+  @Patch(':id')
+  @RequirePerms(Perm.FLAG_WRITE)
+  @TenantResource({ param: 'id', via: 'flag' })
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateFlagDto,
+  ) {
+    return this.flagsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @RequirePerms(Perm.FLAG_WRITE)
+  @TenantResource({ param: 'id', via: 'flag' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  removePermanently(@Param('id', ParseUUIDPipe) id: string) {
+    return this.flagsService.removePermanently(id);
+  }
+
+  // ─── Flag values ──────────────────────────────────────────────────────────────
+
+  @Get(':flagId/values/:environmentId')
+  @RequirePerms(Perm.FLAG_READ)
+  @TenantResource({ param: 'flagId', via: 'flag' })
+  getFlagValue(
+    @Param('flagId', ParseUUIDPipe) flagId: string,
+    @Param('environmentId', ParseUUIDPipe) environmentId: string,
+  ) {
+    return this.flagsService.getFlagValue(flagId, environmentId);
+  }
+
+  @Patch(':flagId/values/:environmentId')
+  @RequirePerms(Perm.FLAG_WRITE)
+  @TenantResource({ param: 'flagId', via: 'flag' })
+  updateFlagValue(
+    @Param('flagId', ParseUUIDPipe) flagId: string,
+    @Param('environmentId', ParseUUIDPipe) environmentId: string,
+    @Body() dto: UpdateFlagValueDto,
+  ) {
+    return this.flagsService.updateFlagValue(flagId, environmentId, dto);
+  }
+
+  /**
+   * Publicar un flag en un ambiente.
+   * Requiere publish:flag — permiso separado de write:flag.
+   */
+  @Post(':flagId/values/:environmentId/publish')
+  @RequirePerms(Perm.FLAG_PUBLISH)
+  @TenantResource({ param: 'flagId', via: 'flag' })
+  publishFlagValue(
+    @Param('flagId', ParseUUIDPipe) flagId: string,
+    @Param('environmentId', ParseUUIDPipe) environmentId: string,
+    @Request() req: { user: { sub: string } },
+  ) {
+    return this.flagsService.publishFlagValue(
+      flagId,
+      environmentId,
+      req.user.sub,
+    );
+  }
+}

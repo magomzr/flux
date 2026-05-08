@@ -1,9 +1,9 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import { environments, projects } from '../../db/schema';
+import { environments, flags, projects } from '../../db/schema';
 import type { Db } from '../../db';
 
-export type TenantResolvable = 'project' | 'environment';
+export type TenantResolvable = 'project' | 'environment' | 'flag';
 
 /**
  * Servicio centralizado que sabe cómo obtener el tenantId de cualquier
@@ -22,6 +22,8 @@ export class TenantResolverService {
         return this.fromProject(entityId);
       case 'environment':
         return this.fromEnvironment(entityId);
+      case 'flag':
+        return this.fromFlag(entityId);
     }
   }
 
@@ -37,7 +39,6 @@ export class TenantResolverService {
   }
 
   private async fromEnvironment(environmentId: string): Promise<string> {
-    // environment → project → tenant
     const environment = await this.db.query.environments.findFirst({
       where: eq(environments.id, environmentId),
       columns: { projectId: true },
@@ -48,5 +49,16 @@ export class TenantResolverService {
     }
 
     return this.fromProject(environment.projectId);
+  }
+
+  private async fromFlag(flagId: string): Promise<string> {
+    const flag = await this.db.query.flags.findFirst({
+      where: eq(flags.id, flagId),
+      columns: { projectId: true },
+    });
+
+    if (!flag) throw new NotFoundException(`Flag ${flagId} not found`);
+
+    return this.fromProject(flag.projectId);
   }
 }
