@@ -8,13 +8,19 @@ import { and, eq } from 'drizzle-orm';
 import { CreateEnvironmentDto } from '../dto/create-environment.dto';
 import { UpdateEnvironmentDto } from '../dto/update-environment.dto';
 import { environments } from '../../../db/schema';
+import { AuditService } from '../../audit/services/audit.service';
+import { AuditAction } from '../../audit/audit.types';
+import type { AuditContext } from '../../audit/audit.types';
 import type { Db } from '../../../db';
 
 @Injectable()
 export class EnvironmentsService {
-  constructor(@Inject('DB') private readonly db: Db) {}
+  constructor(
+    @Inject('DB') private readonly db: Db,
+    private readonly audit: AuditService,
+  ) {}
 
-  async create(projectId: string, dto: CreateEnvironmentDto) {
+  async create(projectId: string, dto: CreateEnvironmentDto, ctx: AuditContext) {
     const existing = await this.db.query.environments.findFirst({
       where: and(
         eq(environments.projectId, projectId),
@@ -43,6 +49,14 @@ export class EnvironmentsService {
       })
       .returning();
 
+    await this.audit.log({
+      action: AuditAction.ENVIRONMENT_CREATED,
+      entityType: 'environment',
+      entityId: environment.id,
+      context: ctx,
+      metadata: { name: environment.name, slug: environment.slug, projectId },
+    });
+
     return environment;
   }
 
@@ -65,11 +79,11 @@ export class EnvironmentsService {
     return environment;
   }
 
-  async update(id: string, dto: UpdateEnvironmentDto) {
-    const environment = await this.findOne(id);
+  async update(id: string, dto: UpdateEnvironmentDto, ctx: AuditContext) {
+    const before = await this.findOne(id);
 
     if (dto.isDefault) {
-      await this.clearDefault(environment.projectId);
+      await this.clearDefault(before.projectId);
     }
 
     const [updated] = await this.db
@@ -78,13 +92,29 @@ export class EnvironmentsService {
       .where(eq(environments.id, id))
       .returning();
 
+    await this.audit.log({
+      action: AuditAction.ENVIRONMENT_UPDATED,
+      entityType: 'environment',
+      entityId: id,
+      context: ctx,
+      metadata: { before: { name: before.name, color: before.color }, after: dto },
+    });
+
     return updated;
   }
 
-  async removePermanently(id: string) {
-    await this.findOne(id);
+  async removePermanently(id: string, ctx: AuditContext) {
+    const environment = await this.findOne(id);
 
     await this.db.delete(environments).where(eq(environments.id, id));
+
+    await this.audit.log({
+      action: AuditAction.ENVIRONMENT_DELETED,
+      entityType: 'environment',
+      entityId: id,
+      context: ctx,
+      metadata: { name: environment.name, slug: environment.slug },
+    });
   }
 
   // ─── Privados ────────────────────────────────────────────────────────────────

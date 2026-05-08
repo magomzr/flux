@@ -10,6 +10,7 @@ import { TenantsModule } from './modules/tenants/tenants.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { EnvironmentsModule } from './modules/environments/environments.module';
 import { FlagsModule } from './modules/flags/flags.module';
+import { AuditModule } from './modules/audit/audit.module';
 import { TenantModule } from './common/tenant/tenant.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { TenantModule } from './common/tenant/tenant.module';
     ConfigModule.forRoot({ isGlobal: true }),
     DbModule,
     TenantModule,
+    AuditModule,
     AuthModule,
     TenantsModule,
     ProjectsModule,

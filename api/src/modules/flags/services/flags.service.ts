@@ -1,6 +1,5 @@
 import {
   ConflictException,
-  ForbiddenException,
   Inject,
   Injectable,
   NotFoundException,
@@ -10,17 +9,19 @@ import { CreateFlagDto } from '../dto/create-flag.dto';
 import { UpdateFlagDto } from '../dto/update-flag.dto';
 import { UpdateFlagValueDto } from '../dto/update-flag-value.dto';
 import { environments, flagValues, flags } from '../../../db/schema';
+import { AuditService } from '../../audit/services/audit.service';
+import { AuditAction } from '../../audit/audit.types';
+import type { AuditContext } from '../../audit/audit.types';
 import type { Db } from '../../../db';
 
 @Injectable()
 export class FlagsService {
-  constructor(@Inject('DB') private readonly db: Db) {}
+  constructor(
+    @Inject('DB') private readonly db: Db,
+    private readonly audit: AuditService,
+  ) {}
 
-  /**
-   * Crea el flag y genera automáticamente un flag_value por cada ambiente
-   * del proyecto, todos deshabilitados por defecto.
-   */
-  async create(projectId: string, dto: CreateFlagDto) {
+  async create(projectId: string, dto: CreateFlagDto, ctx: AuditContext) {
     const existing = await this.db.query.flags.findFirst({
       where: and(eq(flags.projectId, projectId), eq(flags.key, dto.key)),
     });
@@ -57,6 +58,14 @@ export class FlagsService {
       );
     }
 
+    await this.audit.log({
+      action: AuditAction.FLAG_CREATED,
+      entityType: 'flag',
+      entityId: flag.id,
+      context: ctx,
+      metadata: { key: flag.key, name: flag.name, type: flag.type, projectId },
+    });
+
     return flag;
   }
 
@@ -80,8 +89,8 @@ export class FlagsService {
     return flag;
   }
 
-  async update(id: string, dto: UpdateFlagDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateFlagDto, ctx: AuditContext) {
+    const before = await this.findOne(id);
 
     const [updated] = await this.db
       .update(flags)
@@ -89,13 +98,29 @@ export class FlagsService {
       .where(eq(flags.id, id))
       .returning();
 
+    await this.audit.log({
+      action: AuditAction.FLAG_UPDATED,
+      entityType: 'flag',
+      entityId: id,
+      context: ctx,
+      metadata: { before: { name: before.name, description: before.description }, after: dto },
+    });
+
     return updated;
   }
 
-  async removePermanently(id: string) {
-    await this.findOne(id);
+  async removePermanently(id: string, ctx: AuditContext) {
+    const flag = await this.findOne(id);
 
     await this.db.delete(flags).where(eq(flags.id, id));
+
+    await this.audit.log({
+      action: AuditAction.FLAG_DELETED,
+      entityType: 'flag',
+      entityId: id,
+      context: ctx,
+      metadata: { key: flag.key, name: flag.name },
+    });
   }
 
   // ─── Flag values ─────────────────────────────────────────────────────────────
@@ -121,8 +146,9 @@ export class FlagsService {
     flagId: string,
     environmentId: string,
     dto: UpdateFlagValueDto,
+    ctx: AuditContext,
   ) {
-    await this.getFlagValue(flagId, environmentId);
+    const before = await this.getFlagValue(flagId, environmentId);
 
     const [updated] = await this.db
       .update(flagValues)
@@ -135,25 +161,34 @@ export class FlagsService {
       )
       .returning();
 
+    await this.audit.log({
+      action: AuditAction.FLAG_VALUE_UPDATED,
+      entityType: 'flag_value',
+      entityId: before.id,
+      context: ctx,
+      metadata: {
+        flagId,
+        environmentId,
+        before: { enabled: before.enabled, value: before.value },
+        after: dto,
+      },
+    });
+
     return updated;
   }
 
-  /**
-   * Publica el flag en un ambiente: marca publishedAt y publishedBy.
-   * Requiere permiso publish:flag — verificado en el controller.
-   */
   async publishFlagValue(
     flagId: string,
     environmentId: string,
-    publishedBy: string,
+    ctx: AuditContext,
   ) {
-    await this.getFlagValue(flagId, environmentId);
+    const before = await this.getFlagValue(flagId, environmentId);
 
     const [updated] = await this.db
       .update(flagValues)
       .set({
         publishedAt: new Date(),
-        publishedBy,
+        publishedBy: ctx.userId,
         updatedAt: new Date(),
       })
       .where(
@@ -163,6 +198,14 @@ export class FlagsService {
         ),
       )
       .returning();
+
+    await this.audit.log({
+      action: AuditAction.FLAG_VALUE_PUBLISHED,
+      entityType: 'flag_value',
+      entityId: before.id,
+      context: ctx,
+      metadata: { flagId, environmentId, enabled: before.enabled },
+    });
 
     return updated;
   }

@@ -8,13 +8,19 @@ import { and, eq } from 'drizzle-orm';
 import { CreateProjectDto } from '../dto/create-project.dto';
 import { UpdateProjectDto } from '../dto/update-project.dto';
 import { projects } from '../../../db/schema';
+import { AuditService } from '../../audit/services/audit.service';
+import { AuditAction } from '../../audit/audit.types';
+import type { AuditContext } from '../../audit/audit.types';
 import type { Db } from '../../../db';
 
 @Injectable()
 export class ProjectsService {
-  constructor(@Inject('DB') private readonly db: Db) {}
+  constructor(
+    @Inject('DB') private readonly db: Db,
+    private readonly audit: AuditService,
+  ) {}
 
-  async create(dto: CreateProjectDto & { tenantId: string }) {
+  async create(dto: CreateProjectDto & { tenantId: string }, ctx: AuditContext) {
     const existing = await this.db.query.projects.findFirst({
       where: and(
         eq(projects.tenantId, dto.tenantId),
@@ -38,6 +44,14 @@ export class ProjectsService {
       })
       .returning();
 
+    await this.audit.log({
+      action: AuditAction.PROJECT_CREATED,
+      entityType: 'project',
+      entityId: project.id,
+      context: ctx,
+      metadata: { name: project.name, slug: project.slug },
+    });
+
     return project;
   }
 
@@ -60,8 +74,8 @@ export class ProjectsService {
     return project;
   }
 
-  async update(id: string, dto: UpdateProjectDto) {
-    await this.findOne(id);
+  async update(id: string, dto: UpdateProjectDto, ctx: AuditContext) {
+    const before = await this.findOne(id);
 
     const [updated] = await this.db
       .update(projects)
@@ -69,10 +83,18 @@ export class ProjectsService {
       .where(eq(projects.id, id))
       .returning();
 
+    await this.audit.log({
+      action: AuditAction.PROJECT_UPDATED,
+      entityType: 'project',
+      entityId: id,
+      context: ctx,
+      metadata: { before: { name: before.name, description: before.description }, after: dto },
+    });
+
     return updated;
   }
 
-  async deactivate(id: string) {
+  async deactivate(id: string, ctx: AuditContext) {
     await this.findOne(id);
 
     const [updated] = await this.db
@@ -81,12 +103,27 @@ export class ProjectsService {
       .where(eq(projects.id, id))
       .returning();
 
+    await this.audit.log({
+      action: AuditAction.PROJECT_DEACTIVATED,
+      entityType: 'project',
+      entityId: id,
+      context: ctx,
+    });
+
     return updated;
   }
 
-  async removePermanently(id: string) {
-    await this.findOne(id);
+  async removePermanently(id: string, ctx: AuditContext) {
+    const project = await this.findOne(id);
 
     await this.db.delete(projects).where(eq(projects.id, id));
+
+    await this.audit.log({
+      action: AuditAction.PROJECT_DELETED,
+      entityType: 'project',
+      entityId: id,
+      context: ctx,
+      metadata: { name: project.name, slug: project.slug },
+    });
   }
 }

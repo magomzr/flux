@@ -36,7 +36,7 @@
 - [ ] `assets` — upload, storage en R2/S3, URLs firmadas, relación con tenant
 - [ ] `billing` — planes, suscripciones, registro de uso, calculadora de costos
 - [ ] `delivery` — cache en memoria, evaluación de flags, REST polling, SSE
-- [ ] `audit` — log inmutable de acciones del dashboard
+- [x] `audit` — log inmutable de acciones del dashboard
 
 ### Auth / usuarios
 - [ ] Endpoint `POST /auth/logout` probado end-to-end
