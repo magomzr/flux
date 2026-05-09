@@ -86,7 +86,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/tenants",
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Acme Corp\",\n  \"slug\": \"acme\",\n  \"email\": \"admin@acme.com\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Acme Corp\",\n  \"slug\": \"acme\",\n  \"email\": \"admin@acme.com\",\n  \"admin\": {\n    \"name\": \"Acme Admin\",\n    \"email\": \"admin@acme.com\",\n    \"password\": \"changeme123\"\n  }\n}" }
           }
         },
         {
@@ -131,6 +131,51 @@
             "method": "DELETE",
             "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
             "url": "{{baseUrl}}/tenants/{{tenantId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Listar usuarios del tenant",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/users"
+          }
+        },
+        {
+          "name": "Crear usuario en tenant",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/users",
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Dev User\",\n  \"email\": \"dev@acme.com\",\n  \"password\": \"changeme123\",\n  \"role\": \"developer\"\n}" }
+          }
+        },
+        {
+          "name": "Actualizar usuario",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/users/USER_ID_AQUI",
+            "body": { "mode": "raw", "raw": "{\n  \"role\": \"editor\",\n  \"isActive\": false\n}" }
+          }
+        },
+        {
+          "name": "Eliminar usuario",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{accessToken}}" }],
+            "url": "{{baseUrl}}/tenants/{{tenantId}}/users/USER_ID_AQUI"
           }
         }
       ]

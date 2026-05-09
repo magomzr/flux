@@ -8,6 +8,20 @@
       "when": 1778215155634,
       "tag": "0000_normal_strong_guy",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778301686748,
+      "tag": "0001_dapper_jubilee",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1778301781715,
+      "tag": "0002_purple_grim_reaper",
+      "breakpoints": true
     }
   ]
 }

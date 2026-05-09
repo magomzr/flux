@@ -69,13 +69,24 @@ Flux sirve tres escenarios distintos con lógicas de precio diferentes:
 - [x] `.env.example` actualizado con todas las variables actuales
 - [ ] Seed script reproducible para `super_admin` (en lugar de INSERT manual)
 - [ ] Dockerfile + docker-compose/podman-compose para desarrollo local
-- [ ] `POST /tenants` — al crear un tenant, crear automáticamente un usuario `tenant_admin` con email y password definidos por el `super_admin` en el mismo request. Devolver las credenciales en la respuesta (solo una vez).
-- [ ] `GET/POST /tenants/:tenantId/users` — CRUD de usuarios por tenant (para gestión desde el dashboard)
+- [x] `POST /tenants` — al crear un tenant, crear automáticamente un usuario `tenant_admin` con email y password definidos por el `super_admin` en el mismo request. Devolver las credenciales en la respuesta (solo una vez).
+- [x] `GET/POST/PATCH/DELETE /tenants/:tenantId/users` — CRUD de usuarios por tenant
 
 ### Post-MVP
 - [ ] `assets` — upload, storage en R2/S3, URLs firmadas
 - [ ] Redis para invalidación de cache entre múltiples instancias
 - [ ] Cleanup periódico de refresh tokens expirados (cron job)
+- [ ] **Unit tests del API** — cobertura completa de todos los módulos:
+  - `auth` — login, refresh, logout, revocación de familia, changePassword
+  - `users` — CRUD, validación de credenciales, permisos por rol
+  - `tenants` — CRUD, creación con admin automático
+  - `projects` — CRUD, ownership check via TenantGuard
+  - `environments` — CRUD, lógica de isDefault
+  - `flags` — CRUD, creación automática de flag_values, invalidación de cache
+  - `billing` — planes, suscripciones, forecast, overage solo en Scale
+  - `delivery` — cache L1/L2, ETag, invalidación por eventos
+  - `audit` — escritura inmutable, consulta por filtros
+  - Guards: `TenantGuard`, `PermissionsGuard`, `SdkApiKeyGuard`
 - [ ] Tests del módulo `auth` (login, refresh, revocación)
 - [ ] Tests del módulo `tenants`
 - [ ] Actualizar README con estado actual del proyecto

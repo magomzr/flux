@@ -5,7 +5,8 @@ import * as bcrypt from 'bcrypt';
 import { and, eq, isNull } from 'drizzle-orm';
 import { LoginDto } from '../dto/login.dto';
 import { UsersService } from '../../users/services/users.service';
-import { refreshTokens } from '../../../db/schema';
+import { refreshTokens, users } from '../../../db/schema';
+import type { ChangePasswordDto } from '../dto/change-password.dto';
 import type { Db } from '../../../db';
 
 @Injectable()
@@ -167,5 +168,19 @@ export class AuthService {
           isNull(refreshTokens.revokedAt),
         ),
       );
+  }
+
+  async changePassword(userId: string, dto: ChangePasswordDto): Promise<void> {
+    const user = await this.users.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const match = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!match) throw new UnauthorizedException('Current password is incorrect');
+
+    const newHash = await bcrypt.hash(dto.newPassword, 10);
+    await this.db
+      .update(users)
+      .set({ password: newHash })
+      .where(eq(users.id, userId));
   }
 }

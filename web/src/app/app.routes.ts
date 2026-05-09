@@ -62,9 +62,19 @@ export const routes: Routes = [
           import('./features/audit/audit-log').then((m) => m.AuditLog),
       },
       {
+        path: 'users',
+        loadComponent: () =>
+          import('./features/users/user-list').then((m) => m.UserList),
+      },
+      {
         path: 'tenants',
         loadComponent: () =>
           import('./features/tenants/tenant-list').then((m) => m.TenantList),
+      },
+      {
+        path: 'tenants/:tenantId/users',
+        loadComponent: () =>
+          import('./features/tenants/tenant-users').then((m) => m.TenantUsers),
       },
     ],
   },

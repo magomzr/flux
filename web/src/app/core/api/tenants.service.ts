@@ -8,6 +8,11 @@ export interface CreateTenantRequest {
   slug: string;
   email: string;
   logoUrl?: string;
+  admin: {
+    name: string;
+    email: string;
+    password: string;
+  };
 }
 
 export interface UpdateTenantRequest {

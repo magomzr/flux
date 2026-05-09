@@ -1,9 +1,12 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Patch, Body, HttpCode, HttpStatus, Req } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { AuthService } from '../services/auth.service';
 import { LoginDto } from '../dto/login.dto';
 import { RefreshDto } from '../dto/refresh.dto';
+import { ChangePasswordDto } from '../dto/change-password.dto';
 import { Public } from '../../../common/decorators/public.decorator';
+import type { RequestUser } from '../../../common/decorators/current-user.decorator';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -37,5 +40,25 @@ export class AuthController {
   @ApiResponse({ status: 204, description: 'Sesión cerrada' })
   logout(@Body() dto: RefreshDto) {
     return this.authService.logout(dto.refresh_token);
+  }
+}
+
+// Endpoint separado bajo /users/me para evitar conflicto con el interceptor
+// que excluye /auth/* del token de autorización
+@ApiTags('Me')
+@Controller('users/me')
+export class MeController {
+  constructor(private readonly authService: AuthService) {}
+
+  @Patch('password')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Cambia la contraseña del usuario autenticado' })
+  @ApiResponse({ status: 204, description: 'Contraseña actualizada' })
+  @ApiResponse({ status: 401, description: 'Contraseña actual incorrecta' })
+  changePassword(
+    @Body() dto: ChangePasswordDto,
+    @Req() req: Request & { user: RequestUser },
+  ) {
+    return this.authService.changePassword(req.user.sub, dto);
   }
 }

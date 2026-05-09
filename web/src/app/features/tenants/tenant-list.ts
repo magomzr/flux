@@ -1,11 +1,37 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TenantsService } from '../../core/api/tenants.service';
 import type { Tenant } from '../../core/models/api.models';
 
+interface NewTenantCredentials {
+  tenantName: string;
+  adminName: string;
+  adminEmail: string;
+  adminPassword: string;
+}
+
+function generatePassword(): string {
+  const upper   = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower   = 'abcdefghjkmnpqrstuvwxyz';
+  const digits  = '23456789';
+  const special = '!@#$%&*';
+  const all = upper + lower + digits + special;
+  const required = [
+    upper[Math.floor(Math.random() * upper.length)],
+    lower[Math.floor(Math.random() * lower.length)],
+    digits[Math.floor(Math.random() * digits.length)],
+    special[Math.floor(Math.random() * special.length)],
+  ];
+  const rest = Array.from({ length: 12 }, () =>
+    all[Math.floor(Math.random() * all.length)],
+  );
+  return [...required, ...rest].sort(() => Math.random() - 0.5).join('');
+}
+
 @Component({
   selector: 'app-tenant-list',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink],
   template: `
     <div class="p-6 max-w-5xl mx-auto">
 
@@ -27,37 +53,81 @@ import type { Tenant } from '../../core/models/api.models';
       <!-- Create form -->
       @if (showForm()) {
         <div class="border rounded-xl p-5 mb-6" style="background-color: var(--bg-surface); border-color: var(--border)">
-          <h2 class="text-sm font-medium mb-4" style="color: var(--text-primary)">New tenant</h2>
-          <form [formGroup]="form" (ngSubmit)="create()" class="grid grid-cols-2 gap-4">
+          <h2 class="text-sm font-medium mb-1" style="color: var(--text-primary)">New tenant</h2>
+          <p class="text-xs mb-4" style="color: var(--text-muted)">
+            A <strong>tenant_admin</strong> account will be created automatically with the credentials below.
+          </p>
 
-            <div class="space-y-1">
-              <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Name</label>
-              <input formControlName="name" placeholder="Acme Corp"
-                class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
-                style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
+          <form [formGroup]="form" (ngSubmit)="create()" class="space-y-5">
+
+            <!-- Tenant info -->
+            <div>
+              <p class="text-xs uppercase tracking-wider mb-3 font-medium" style="color: var(--text-muted)">Tenant</p>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Name</label>
+                  <input formControlName="name" placeholder="Acme Corp"
+                    class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+                    style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Slug</label>
+                  <input formControlName="slug" placeholder="acme"
+                    class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+                    style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
+                </div>
+                <div class="space-y-1 col-span-2">
+                  <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Billing email</label>
+                  <input formControlName="email" type="email" placeholder="billing@acme.com"
+                    class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+                    style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
+                </div>
+              </div>
             </div>
 
-            <div class="space-y-1">
-              <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Slug</label>
-              <input formControlName="slug" placeholder="acme"
-                class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
-                style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
-            </div>
-
-            <div class="space-y-1 col-span-2">
-              <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Email</label>
-              <input formControlName="email" type="email" placeholder="admin@acme.com"
-                class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
-                style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
+            <!-- Admin user -->
+            <div formGroupName="admin">
+              <p class="text-xs uppercase tracking-wider mb-3 font-medium" style="color: var(--text-muted)">Admin account</p>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                  <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Name</label>
+                  <input formControlName="name" placeholder="John Doe"
+                    class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+                    style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
+                </div>
+                <div class="space-y-1">
+                  <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Email</label>
+                  <input formControlName="email" type="email" placeholder="admin@acme.com"
+                    class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+                    style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
+                </div>
+                <div class="space-y-1 col-span-2">
+                  <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">
+                    Temporary password
+                    <span class="normal-case ml-1" style="color: var(--text-muted)">(min. 8 characters)</span>
+                  </label>
+                  <div class="flex gap-2">
+                    <input formControlName="password" type="text" placeholder="••••••••"
+                      class="flex-1 rounded-lg px-3 py-2 text-sm border font-mono focus:outline-none focus:ring-2 focus:border-transparent"
+                      style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
+                    <button type="button" (click)="fillAdminPassword()"
+                      class="text-xs px-3 py-2 rounded-lg border transition-colors cursor-pointer whitespace-nowrap"
+                      style="border-color: var(--border); color: var(--text-secondary); background-color: var(--bg-elevated)">
+                      Generate
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             @if (formError()) {
-              <p class="col-span-2 text-xs rounded-lg px-3 py-2" style="color: var(--danger-fg); background-color: var(--danger-subtle); border: 1px solid var(--danger-fg)">
+              <p class="text-xs rounded-lg px-3 py-2"
+                 style="color: var(--danger-fg); background-color: var(--danger-subtle); border: 1px solid var(--danger-fg)">
                 {{ formError() }}
               </p>
             }
 
-            <div class="col-span-2 flex justify-end gap-2">
+            <div class="flex justify-end gap-2">
               <button type="button" (click)="cancelForm()"
                 class="text-sm px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                 style="color: var(--text-secondary)">
@@ -124,6 +194,11 @@ import type { Tenant } from '../../core/models/api.models';
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center justify-end gap-2">
+                      <a [routerLink]="['/tenants', tenant.id, 'users']"
+                        class="text-xs transition-colors cursor-pointer"
+                        style="color: var(--accent-text)">
+                        Users
+                      </a>
                       @if (tenant.isActive) {
                         <button (click)="deactivate(tenant)"
                           class="text-xs transition-colors cursor-pointer"
@@ -145,13 +220,61 @@ import type { Tenant } from '../../core/models/api.models';
         </div>
       }
 
-      <!-- Delete confirm dialog -->
+      <!-- Credentials modal — shown once after tenant creation -->
+      @if (newCredentials()) {
+        <div class="fixed inset-0 flex items-center justify-center z-50 px-4"
+             style="background-color: var(--bg-overlay)">
+          <div class="border rounded-xl p-6 max-w-md w-full"
+               style="background-color: var(--bg-surface); border-color: var(--border)">
+            <h3 class="text-sm font-medium mb-1" style="color: var(--text-primary)">
+              Tenant created — save these credentials
+            </h3>
+            <p class="text-xs mb-4" style="color: var(--text-muted)">
+              The admin password is shown only once. Copy it now and share it securely with the client.
+            </p>
+
+            <div class="space-y-3 mb-5">
+              <div class="rounded-lg px-3 py-2.5" style="background-color: var(--bg-elevated)">
+                <p class="text-xs mb-1" style="color: var(--text-muted)">Tenant</p>
+                <p class="text-sm font-medium" style="color: var(--text-primary)">{{ newCredentials()!.tenantName }}</p>
+              </div>
+              <div class="rounded-lg px-3 py-2.5" style="background-color: var(--bg-elevated)">
+                <p class="text-xs mb-1" style="color: var(--text-muted)">Admin name</p>
+                <p class="text-sm" style="color: var(--text-primary)">{{ newCredentials()!.adminName }}</p>
+              </div>
+              <div class="rounded-lg px-3 py-2.5" style="background-color: var(--bg-elevated)">
+                <p class="text-xs mb-1" style="color: var(--text-muted)">Admin email</p>
+                <p class="text-sm font-mono" style="color: var(--text-primary)">{{ newCredentials()!.adminEmail }}</p>
+              </div>
+              <div class="rounded-lg px-3 py-2.5" style="background-color: var(--mono-bg)">
+                <p class="text-xs mb-1" style="color: var(--text-muted)">Temporary password</p>
+                <p class="text-sm font-mono font-semibold" style="color: var(--success-fg)">
+                  {{ newCredentials()!.adminPassword }}
+                </p>
+              </div>
+            </div>
+
+            <div class="flex justify-end">
+              <button (click)="newCredentials.set(null)"
+                class="text-sm font-medium px-4 py-1.5 rounded-lg transition-colors cursor-pointer"
+                style="background-color: var(--accent); color: var(--accent-fg)">
+                I've saved the credentials
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
+      <!-- Delete confirm -->
       @if (deletingTenant()) {
-        <div class="fixed inset-0 flex items-center justify-center z-50 px-4" style="background-color: var(--bg-overlay)">
-          <div class="border rounded-xl p-6 max-w-sm w-full" style="background-color: var(--bg-surface); border-color: var(--border)">
+        <div class="fixed inset-0 flex items-center justify-center z-50 px-4"
+             style="background-color: var(--bg-overlay)">
+          <div class="border rounded-xl p-6 max-w-sm w-full"
+               style="background-color: var(--bg-surface); border-color: var(--border)">
             <h3 class="text-sm font-medium mb-2" style="color: var(--text-primary)">Delete tenant</h3>
             <p class="text-sm mb-5" style="color: var(--text-secondary)">
-              This will permanently delete <span class="font-medium" style="color: var(--text-primary)">{{ deletingTenant()!.name }}</span>
+              This will permanently delete
+              <span class="font-medium" style="color: var(--text-primary)">{{ deletingTenant()!.name }}</span>
               and all its data. This cannot be undone.
             </p>
             <div class="flex justify-end gap-2">
@@ -177,17 +300,23 @@ export class TenantList implements OnInit {
   private readonly tenantsService = inject(TenantsService);
   private readonly fb = inject(FormBuilder);
 
-  readonly tenants  = signal<Tenant[]>([]);
-  readonly loading  = signal(true);
-  readonly saving   = signal(false);
-  readonly showForm = signal(false);
-  readonly formError = signal<string | null>(null);
+  readonly tenants        = signal<Tenant[]>([]);
+  readonly loading        = signal(true);
+  readonly saving         = signal(false);
+  readonly showForm       = signal(false);
+  readonly formError      = signal<string | null>(null);
   readonly deletingTenant = signal<Tenant | null>(null);
+  readonly newCredentials = signal<NewTenantCredentials | null>(null);
 
   readonly form = this.fb.nonNullable.group({
     name:  ['', Validators.required],
     slug:  ['', [Validators.required, Validators.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)]],
     email: ['', [Validators.required, Validators.email]],
+    admin: this.fb.nonNullable.group({
+      name:     ['', Validators.required],
+      email:    ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(8)]],
+    }),
   });
 
   ngOnInit() {
@@ -211,9 +340,22 @@ export class TenantList implements OnInit {
     this.saving.set(true);
     this.formError.set(null);
 
-    this.tenantsService.create(this.form.getRawValue()).subscribe({
-      next: (tenant) => {
+    const value = this.form.getRawValue();
+
+    this.tenantsService.create(value).subscribe({
+      next: (response: any) => {
+        // Agregar el tenant a la lista (sin las credenciales del admin)
+        const { admin: _admin, ...tenant } = response;
         this.tenants.update((list) => [tenant, ...list]);
+
+        // Mostrar credenciales en modal — solo esta vez
+        this.newCredentials.set({
+          tenantName:    tenant.name,
+          adminName:     response.admin.name,
+          adminEmail:    response.admin.email,
+          adminPassword: response.admin.password,
+        });
+
         this.cancelForm();
         this.saving.set(false);
       },
@@ -256,5 +398,9 @@ export class TenantList implements OnInit {
     this.showForm.set(false);
     this.form.reset();
     this.formError.set(null);
+  }
+
+  fillAdminPassword() {
+    this.form.get('admin')?.patchValue({ password: generatePassword() } as any);
   }
 }

@@ -1,5 +1,4 @@
 import {
-  IsBoolean,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -7,7 +6,27 @@ import {
   IsUrl,
   Matches,
   MaxLength,
+  MinLength,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+
+export class AdminUserDto {
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(100)
+  name!: string;
+
+  @IsEmail()
+  @IsNotEmpty()
+  email!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(8)
+  @MaxLength(72)
+  password!: string;
+}
 
 export class CreateTenantDto {
   @IsString()
@@ -31,4 +50,9 @@ export class CreateTenantDto {
   @IsOptional()
   @IsUrl()
   logoUrl?: string;
+
+  @ValidateNested()
+  @Type(() => AdminUserDto)
+  @IsNotEmpty()
+  admin!: AdminUserDto;
 }

@@ -27,6 +27,11 @@ export enum Perm {
   TENANT_UPDATE = 'update:tenant',
   TENANT_DELETE = 'delete:tenant',
 
+  // Users (gestión de equipo dentro de un tenant)
+  USER_READ = 'read:user',
+  USER_WRITE = 'write:user',
+  USER_DELETE = 'delete:user',
+
   // Audit
   AUDIT_READ = 'read:audit',
 }
@@ -49,6 +54,9 @@ export const ROLE_PERMISSIONS: Record<string, Perm[]> = {
     Perm.BILLING_READ,
     Perm.BILLING_WRITE,
     Perm.AUDIT_READ,
+    Perm.USER_READ,
+    Perm.USER_WRITE,
+    Perm.USER_DELETE,
   ],
 
   // Desarrollador del cliente. Gestión de flags sin billing ni tenants.

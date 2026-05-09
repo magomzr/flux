@@ -10,6 +10,7 @@ import { UpdateTenantDto } from '../dto/update.tenant.dto';
 import { tenants } from '../../../db/schema';
 import { AuditService } from '../../audit/services/audit.service';
 import { AuditAction } from '../../audit/audit.types';
+import { UsersService } from '../../users/services/users.service';
 import type { AuditContext } from '../../audit/audit.types';
 import type { Db } from '../../../db';
 
@@ -18,6 +19,7 @@ export class TenantsService {
   constructor(
     @Inject('DB') private readonly db: Db,
     private readonly audit: AuditService,
+    private readonly usersService: UsersService,
   ) {}
 
   async create(dto: CreateTenantDto, ctx: AuditContext) {
@@ -39,6 +41,14 @@ export class TenantsService {
       })
       .returning();
 
+    // Crear el usuario tenant_admin inicial
+    const adminUser = await this.usersService.createTenantAdmin(tenant.id, {
+      name: dto.admin.name,
+      email: dto.admin.email,
+      password: dto.admin.password,
+      role: 'tenant_admin',
+    });
+
     await this.audit.log({
       action: AuditAction.TENANT_CREATED,
       entityType: 'tenant',
@@ -47,7 +57,17 @@ export class TenantsService {
       metadata: { name: tenant.name, slug: tenant.slug, email: tenant.email },
     });
 
-    return tenant;
+    // Devolver tenant + credenciales del admin (password solo esta vez)
+    return {
+      ...tenant,
+      admin: {
+        id: adminUser.id,
+        name: adminUser.name,
+        email: adminUser.email,
+        role: adminUser.role,
+        password: adminUser.password, // texto plano — solo en esta respuesta
+      },
+    };
   }
 
   async findAll() {

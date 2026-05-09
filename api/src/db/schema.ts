@@ -28,7 +28,7 @@ export const users = pgTable(
   'users',
   {
     id: uuid('id').primaryKey().defaultRandom(),
-    tenantId: uuid('tenant_id').references(() => tenants.id), // null = usuario interno
+    tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'set null' }), // null = usuario interno
     name: text('name').notNull(),
     email: text('email').notNull().unique(),
     password: text('password').notNull(),
@@ -145,7 +145,7 @@ export const flagValues = pgTable('flag_values', {
   rolloutPct: integer('rollout_pct').notNull().default(100), // 0-100
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   publishedAt: timestamp('published_at'), // null = nunca publicado
-  publishedBy: uuid('published_by').references(() => users.id),
+  publishedBy: uuid('published_by').references(() => users.id, { onDelete: 'set null' }),
 });
 
 // ─── Assets ───────────────────────────────────────────────────────────────────
@@ -212,8 +212,8 @@ export const usageRecords = pgTable('usage_records', {
 
 export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
-  tenantId: uuid('tenant_id').references(() => tenants.id),
-  userId: uuid('user_id').references(() => users.id),
+  tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
   action: text('action').notNull(), // 'flag.published', 'project.created', etc.
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
