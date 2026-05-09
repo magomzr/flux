@@ -9,6 +9,21 @@
 - [x] Estrategia de extracción del módulo `delivery` a Go en el futuro
 - [x] Roles y permisos definidos en código (`roles.config.ts`)
 - [x] Schema de DB completo en Drizzle (`schema.ts`)
+- [x] Estrategia de planes definida (ver abajo)
+
+### Modelo de negocio — planes
+
+Flux sirve tres escenarios distintos con lógicas de precio diferentes:
+
+| Plan | Escenario | Precio | Overage |
+|---|---|---|---|
+| **Starter** | Uso interno / proyectos propios | $0 | No |
+| **Studio** | Clientes de desarrollo a medida | $49/mo fijo | No — precio fijo, sin medidores |
+| **Scale** | Empresas externas que contratan Flux directamente | $99/mo base | Sí — evaluaciones y storage |
+
+- **Starter**: 1 proyecto, 3 ambientes, 50 flags, sin SSE, polling 60s.
+- **Studio**: proyectos ilimitados, 10 ambientes, 500 flags, SSE incluido, polling 10s. Sin medidores de evaluaciones — el costo de delivery se absorbe en el margen del contrato de desarrollo.
+- **Scale**: todo ilimitado, SSE, polling 5s. Con medidores de evaluaciones y storage para clientes que no tienen otra relación comercial con Flux.
 
 ### Infraestructura
 - [x] Postgres 17 corriendo en Podman

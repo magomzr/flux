@@ -12,11 +12,14 @@ import type { CostEstimateDto } from '../dto/cost-estimate.dto';
 import type { Db } from '../../../db';
 
 // Precios de overage en centavos (USD)
+// Solo aplica al plan 'scale' — Studio y Starter no tienen medidores.
 const OVERAGE = {
   evaluationsPer1k: 1,    // $0.01 por cada 1000 evaluaciones extra
-  sseConnectionPerDay: 5, // $0.05 por conexión SSE máxima al día
   storageMbPerMonth: 2,   // $0.02 por MB extra al mes
 } as const;
+
+// Planes con precio fijo (sin overage de evaluaciones)
+const FLAT_RATE_PLANS = new Set(['starter', 'studio']);
 
 @Injectable()
 export class BillingService {
@@ -167,18 +170,21 @@ export class BillingService {
     if (plan) {
       baseCostUsd = plan.priceUsd / 100;
 
-      if (plan.maxEvaluationsMonth !== null && projectedEvaluations > plan.maxEvaluationsMonth) {
-        const extra = projectedEvaluations - plan.maxEvaluationsMonth;
-        const cost  = Math.ceil(extra / 1000) * (OVERAGE.evaluationsPer1k / 100);
-        overageCostUsd += cost;
-        breakdown['evaluations_overage_usd'] = cost;
-      }
+      // Overage solo aplica a planes con medidores (Scale)
+      if (!FLAT_RATE_PLANS.has(plan.id)) {
+        if (plan.maxEvaluationsMonth !== null && projectedEvaluations > plan.maxEvaluationsMonth) {
+          const extra = projectedEvaluations - plan.maxEvaluationsMonth;
+          const cost  = Math.ceil(extra / 1000) * (OVERAGE.evaluationsPer1k / 100);
+          overageCostUsd += cost;
+          breakdown['evaluations_overage_usd'] = cost;
+        }
 
-      if (plan.maxAssetStorageMb !== null && projectedStorageMb > plan.maxAssetStorageMb) {
-        const extra = projectedStorageMb - plan.maxAssetStorageMb;
-        const cost  = extra * (OVERAGE.storageMbPerMonth / 100);
-        overageCostUsd += cost;
-        breakdown['storage_overage_usd'] = cost;
+        if (plan.maxAssetStorageMb !== null && projectedStorageMb > plan.maxAssetStorageMb) {
+          const extra = projectedStorageMb - plan.maxAssetStorageMb;
+          const cost  = extra * (OVERAGE.storageMbPerMonth / 100);
+          overageCostUsd += cost;
+          breakdown['storage_overage_usd'] = cost;
+        }
       }
     }
 
@@ -231,25 +237,24 @@ export class BillingService {
       let overageCostUsd = 0;
       const breakdown: Record<string, number> = {};
 
-      // Evaluaciones extra
+      // Evaluaciones extra — solo en planes con medidores
       const evalUsage = dto.evaluationsMonth ?? 0;
-      if (plan.maxEvaluationsMonth !== null && evalUsage > plan.maxEvaluationsMonth) {
+      if (!FLAT_RATE_PLANS.has(plan.id) && plan.maxEvaluationsMonth !== null && evalUsage > plan.maxEvaluationsMonth) {
         const extra = evalUsage - plan.maxEvaluationsMonth;
         const cost = Math.ceil(extra / 1000) * (OVERAGE.evaluationsPer1k / 100);
         overageCostUsd += cost;
         breakdown['evaluations_overage_usd'] = cost;
       }
 
-      // SSE connections
+      // SSE — indicar si el plan lo incluye
       const sseUsage = dto.sseConnectionsMax ?? 0;
       if (!plan.hasSse && sseUsage > 0) {
         breakdown['sse_not_available'] = 0;
-        breakdown['sse_note'] = 0; // plan no incluye SSE
       }
 
-      // Storage extra
+      // Storage extra — solo en planes con medidores
       const storageUsage = dto.assetStorageMb ?? 0;
-      if (plan.maxAssetStorageMb !== null && storageUsage > plan.maxAssetStorageMb) {
+      if (!FLAT_RATE_PLANS.has(plan.id) && plan.maxAssetStorageMb !== null && storageUsage > plan.maxAssetStorageMb) {
         const extra = storageUsage - plan.maxAssetStorageMb;
         const cost = extra * (OVERAGE.storageMbPerMonth / 100);
         overageCostUsd += cost;

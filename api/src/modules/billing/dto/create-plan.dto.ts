@@ -11,7 +11,7 @@ import {
 export class CreatePlanDto {
   @IsString()
   @IsNotEmpty()
-  @IsIn(['free', 'standard', 'pro'])
+  @IsIn(['starter', 'studio', 'scale'])
   id!: string;
 
   @IsString()

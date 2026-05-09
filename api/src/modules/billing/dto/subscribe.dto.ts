@@ -3,6 +3,6 @@ import { IsIn, IsNotEmpty, IsString } from 'class-validator';
 export class SubscribeDto {
   @IsString()
   @IsNotEmpty()
-  @IsIn(['free', 'standard', 'pro'])
+  @IsIn(['starter', 'studio', 'scale'])
   planId!: string;
 }

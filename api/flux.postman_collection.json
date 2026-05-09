@@ -533,7 +533,7 @@
       "name": "Billing",
       "item": [
         {
-          "name": "Crear plan — Free",
+          "name": "Crear plan — Starter",
           "request": {
             "method": "POST",
             "header": [
@@ -541,11 +541,11 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/plans",
-            "body": { "mode": "raw", "raw": "{\n  \"id\": \"free\",\n  \"name\": \"Free\",\n  \"maxFlags\": 10,\n  \"maxProjects\": 1,\n  \"maxEnvironments\": 2,\n  \"maxEvaluationsMonth\": 50000,\n  \"maxAssetStorageMb\": 100,\n  \"hasSse\": false,\n  \"pollIntervalSeconds\": 60,\n  \"priceUsd\": 0\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"id\": \"starter\",\n  \"name\": \"Starter\",\n  \"maxFlags\": 50,\n  \"maxProjects\": 1,\n  \"maxEnvironments\": 3,\n  \"maxEvaluationsMonth\": null,\n  \"maxAssetStorageMb\": null,\n  \"hasSse\": false,\n  \"pollIntervalSeconds\": 60,\n  \"priceUsd\": 0\n}" }
           }
         },
         {
-          "name": "Crear plan — Standard",
+          "name": "Crear plan — Studio",
           "request": {
             "method": "POST",
             "header": [
@@ -553,11 +553,11 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/plans",
-            "body": { "mode": "raw", "raw": "{\n  \"id\": \"standard\",\n  \"name\": \"Standard\",\n  \"maxFlags\": 100,\n  \"maxProjects\": 5,\n  \"maxEnvironments\": 5,\n  \"maxEvaluationsMonth\": 1000000,\n  \"maxAssetStorageMb\": 1000,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 10,\n  \"priceUsd\": 2900\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"id\": \"studio\",\n  \"name\": \"Studio\",\n  \"maxFlags\": 500,\n  \"maxProjects\": null,\n  \"maxEnvironments\": 10,\n  \"maxEvaluationsMonth\": null,\n  \"maxAssetStorageMb\": null,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 10,\n  \"priceUsd\": 4900\n}" }
           }
         },
         {
-          "name": "Crear plan — Pro",
+          "name": "Crear plan — Scale",
           "request": {
             "method": "POST",
             "header": [
@@ -565,7 +565,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/plans",
-            "body": { "mode": "raw", "raw": "{\n  \"id\": \"pro\",\n  \"name\": \"Pro\",\n  \"maxFlags\": null,\n  \"maxProjects\": null,\n  \"maxEnvironments\": null,\n  \"maxEvaluationsMonth\": null,\n  \"maxAssetStorageMb\": null,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 5,\n  \"priceUsd\": 9900\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"id\": \"scale\",\n  \"name\": \"Scale\",\n  \"maxFlags\": null,\n  \"maxProjects\": null,\n  \"maxEnvironments\": null,\n  \"maxEvaluationsMonth\": 1000000,\n  \"maxAssetStorageMb\": 5000,\n  \"hasSse\": true,\n  \"pollIntervalSeconds\": 5,\n  \"priceUsd\": 9900\n}" }
           }
         },
         {
@@ -601,7 +601,7 @@
           }
         },
         {
-          "name": "Suscribir tenant a Free",
+          "name": "Suscribir tenant a Starter",
           "request": {
             "method": "POST",
             "header": [
@@ -609,11 +609,11 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/subscribe",
-            "body": { "mode": "raw", "raw": "{\n  \"planId\": \"free\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"planId\": \"starter\"\n}" }
           }
         },
         {
-          "name": "Cambiar a plan Standard",
+          "name": "Cambiar a plan Studio",
           "request": {
             "method": "POST",
             "header": [
@@ -621,7 +621,7 @@
               { "key": "Authorization", "value": "Bearer {{accessToken}}" }
             ],
             "url": "{{baseUrl}}/tenants/{{tenantId}}/billing/subscribe",
-            "body": { "mode": "raw", "raw": "{\n  \"planId\": \"standard\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"planId\": \"studio\"\n}" }
           }
         },
         {
