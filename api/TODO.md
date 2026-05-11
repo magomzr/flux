@@ -77,16 +77,16 @@ Flux sirve tres escenarios distintos con lógicas de precio diferentes:
 - [ ] Redis para invalidación de cache entre múltiples instancias
 - [ ] Cleanup periódico de refresh tokens expirados (cron job)
 - [ ] **Unit tests del API** — cobertura completa de todos los módulos:
-  - `auth` — login, refresh, logout, revocación de familia, changePassword
-  - `users` — CRUD, validación de credenciales, permisos por rol
-  - `tenants` — CRUD, creación con admin automático
-  - `projects` — CRUD, ownership check via TenantGuard
-  - `environments` — CRUD, lógica de isDefault
-  - `flags` — CRUD, creación automática de flag_values, invalidación de cache
-  - `billing` — planes, suscripciones, forecast, overage solo en Scale
-  - `delivery` — cache L1/L2, ETag, invalidación por eventos
-  - `audit` — escritura inmutable, consulta por filtros
-  - Guards: `TenantGuard`, `PermissionsGuard`, `SdkApiKeyGuard`
+  - [x] `auth` — login, refresh, logout, revocación de familia, changePassword (11 tests)
+  - [x] `billing` — planes, suscripciones, forecast, overage solo en Scale (17 tests)
+  - [x] `users` — CRUD, validación de credenciales, permisos por rol, hashing (19 tests)
+  - [x] `flags` — CRUD, flag_values automáticos, cache invalidation, publish (11 tests)
+  - [x] Guards — `TenantGuard` (8 tests), `PermissionsGuard` (4 tests)
+  - [ ] `tenants` — CRUD, creación con admin automático
+  - [ ] `projects` — CRUD, ownership check
+  - [ ] `environments` — CRUD, lógica de isDefault
+  - [ ] `delivery` — cache L1/L2, ETag, invalidación por eventos
+  - [ ] `audit` — escritura inmutable, consulta por filtros
 - [ ] Tests del módulo `auth` (login, refresh, revocación)
 - [ ] Tests del módulo `tenants`
 - [ ] Actualizar README con estado actual del proyecto
