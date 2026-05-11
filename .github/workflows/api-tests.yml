@@ -13,7 +13,6 @@ on:
       - '.github/workflows/api-tests.yml'
 
 env:
-  # Fuerza las GitHub Actions a correr con Node.js 24
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
