@@ -53,6 +53,9 @@
           "defaultConfiguration": "production"
         },
         "serve": {
+          "options": {
+            "host": "0.0.0.0"
+          },
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
