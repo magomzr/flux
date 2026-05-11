@@ -27,6 +27,7 @@ export class AuditService {
     try {
       await this.db.insert(auditLogs).values({
         userId: entry.context.userId ?? null,
+        userEmail: entry.context.userEmail ?? null,
         tenantId: entry.context.tenantId ?? null,
         action: entry.action,
         entityType: entry.entityType,

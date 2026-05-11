@@ -211,8 +211,10 @@ const PAGE_SIZE = 25;
                 <p class="text-xs font-mono break-all" style="color: var(--text-primary)">{{ detailLog()!.entityId }}</p>
               </div>
               <div class="rounded-lg px-3 py-2.5" style="background-color: var(--bg-elevated)">
-                <p class="text-xs mb-1" style="color: var(--text-muted)">User ID</p>
-                <p class="text-xs font-mono break-all" style="color: var(--text-primary)">{{ detailLog()!.userId ?? '—' }}</p>
+                <p class="text-xs mb-1" style="color: var(--text-muted)">User</p>
+                <p class="text-xs font-mono break-all" style="color: var(--text-primary)">
+                  {{ detailLog()!.userEmail ?? detailLog()!.userId ?? '—' }}
+                </p>
               </div>
               <div class="rounded-lg px-3 py-2.5" style="background-color: var(--bg-elevated)">
                 <p class="text-xs mb-1" style="color: var(--text-muted)">IP</p>

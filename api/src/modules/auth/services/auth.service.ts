@@ -24,6 +24,7 @@ export class AuthService {
     const accessToken = this.signAccessToken({
       sub: user.id,
       name: user.name,
+      email: user.email,
       tenantId: user.tenantId ?? null,
       role: user.role,
       permissions,
@@ -65,6 +66,7 @@ export class AuthService {
     const accessToken = this.signAccessToken({
       sub: user.id,
       name: user.name,
+      email: user.email,
       tenantId: user.tenantId ?? null,
       role: user.role,
       permissions,
@@ -93,6 +95,7 @@ export class AuthService {
   private signAccessToken(payload: {
     sub: string;
     name: string;
+    email: string;
     tenantId: string | null;
     role: string;
     permissions: string[];

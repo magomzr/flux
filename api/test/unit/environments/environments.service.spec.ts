@@ -16,7 +16,10 @@ const mockEnv = {
 };
 
 const mockDb = {
-  query: { environments: { findFirst: jest.fn(), findMany: jest.fn() } },
+  query: {
+    environments: { findFirst: jest.fn(), findMany: jest.fn() },
+    flags: { findMany: jest.fn().mockResolvedValue([]) }, // para crear flag_values al crear ambiente
+  },
   insert: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
@@ -38,6 +41,10 @@ describe('EnvironmentsService', () => {
 
     service = module.get(EnvironmentsService);
     jest.clearAllMocks();
+
+    // Restaurar defaults después del clearAllMocks
+    mockDb.query.flags.findMany.mockResolvedValue([]);
+    mockAudit.log.mockResolvedValue(undefined);
   });
 
   describe('create', () => {

@@ -42,6 +42,8 @@ export type AuditActionType = (typeof AuditAction)[keyof typeof AuditAction];
 export interface AuditContext {
   /** ID del usuario que realizó la acción (null = sistema) */
   userId: string | null;
+  /** Email del usuario al momento de la acción — snapshot inmutable */
+  userEmail?: string | null;
   /** ID del tenant al que pertenece la acción */
   tenantId: string | null;
   /** IP del request */

@@ -214,6 +214,7 @@ export const auditLogs = pgTable('audit_logs', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').references(() => tenants.id, { onDelete: 'set null' }),
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  userEmail: text('user_email'), // snapshot del email al momento de la acción
   action: text('action').notNull(), // 'flag.published', 'project.created', etc.
   entityType: text('entity_type').notNull(),
   entityId: uuid('entity_id').notNull(),
