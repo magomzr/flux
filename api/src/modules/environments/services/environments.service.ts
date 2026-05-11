@@ -7,7 +7,7 @@ import {
 import { and, eq } from 'drizzle-orm';
 import { CreateEnvironmentDto } from '../dto/create-environment.dto';
 import { UpdateEnvironmentDto } from '../dto/update-environment.dto';
-import { environments } from '../../../db/schema';
+import { environments, flags, flagValues } from '../../../db/schema';
 import { AuditService } from '../../audit/services/audit.service';
 import { AuditAction } from '../../audit/audit.types';
 import type { AuditContext } from '../../audit/audit.types';
@@ -56,6 +56,21 @@ export class EnvironmentsService {
       context: ctx,
       metadata: { name: environment.name, slug: environment.slug, projectId },
     });
+
+    // Crear flag_values para todos los flags existentes en el proyecto
+    const projectFlags = await this.db.query.flags.findMany({
+      where: eq(flags.projectId, projectId),
+      columns: { id: true },
+    });
+
+    if (projectFlags.length > 0) {
+      await this.db.insert(flagValues).values(
+        projectFlags.map((flag) => ({
+          flagId: flag.id,
+          environmentId: environment.id,
+        })),
+      );
+    }
 
     return environment;
   }

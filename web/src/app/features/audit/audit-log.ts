@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { AuditService } from '../../core/api/audit.service';
 import { AuthService } from '../../core/auth/auth.service';
@@ -102,7 +102,11 @@ const PAGE_SIZE = 25;
             </thead>
             <tbody>
               @for (log of logs(); track log.id) {
-                <tr class="border-b last:border-0 transition-colors" style="border-color: var(--table-border)">
+                <tr
+                  (click)="openDetail(log)"
+                  class="border-b last:border-0 transition-colors cursor-pointer"
+                  style="border-color: var(--table-border)"
+                >
 
                   <!-- Action badge -->
                   <td class="px-4 py-3">
@@ -169,6 +173,65 @@ const PAGE_SIZE = 25;
       }
 
     </div>
+
+    <!-- Detail modal -->
+    @if (detailLog()) {
+      <div class="fixed inset-0 flex items-center justify-center z-50 px-4"
+           style="background-color: var(--bg-overlay)"
+           (click)="detailLog.set(null)">
+        <div class="border rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto"
+             style="background-color: var(--bg-surface); border-color: var(--border)"
+             (click)="$event.stopPropagation()">
+
+          <!-- Header -->
+          <div class="flex items-start justify-between mb-4">
+            <div>
+              <span class="inline-block text-xs font-mono px-2 py-0.5 rounded mb-2"
+                    [style]="actionStyle(detailLog()!.action)">
+                {{ detailLog()!.action }}
+              </span>
+              <p class="text-xs font-mono" style="color: var(--text-muted)">
+                {{ detailLog()!.createdAt | date:'MMM d, y · HH:mm:ss' }}
+              </p>
+            </div>
+            <button (click)="detailLog.set(null)"
+              class="text-lg leading-none cursor-pointer transition-colors"
+              style="color: var(--text-muted)">✕</button>
+          </div>
+
+          <!-- Fields -->
+          <div class="space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+              <div class="rounded-lg px-3 py-2.5" style="background-color: var(--bg-elevated)">
+                <p class="text-xs mb-1" style="color: var(--text-muted)">Entity type</p>
+                <p class="text-xs font-mono" style="color: var(--text-primary)">{{ detailLog()!.entityType }}</p>
+              </div>
+              <div class="rounded-lg px-3 py-2.5" style="background-color: var(--bg-elevated)">
+                <p class="text-xs mb-1" style="color: var(--text-muted)">Entity ID</p>
+                <p class="text-xs font-mono break-all" style="color: var(--text-primary)">{{ detailLog()!.entityId }}</p>
+              </div>
+              <div class="rounded-lg px-3 py-2.5" style="background-color: var(--bg-elevated)">
+                <p class="text-xs mb-1" style="color: var(--text-muted)">User ID</p>
+                <p class="text-xs font-mono break-all" style="color: var(--text-primary)">{{ detailLog()!.userId ?? '—' }}</p>
+              </div>
+              <div class="rounded-lg px-3 py-2.5" style="background-color: var(--bg-elevated)">
+                <p class="text-xs mb-1" style="color: var(--text-muted)">IP</p>
+                <p class="text-xs font-mono" style="color: var(--text-primary)">{{ detailLog()!.ip ?? '—' }}</p>
+              </div>
+            </div>
+
+            @if (detailLog()!.metadata) {
+              <div class="rounded-lg px-3 py-2.5" style="background-color: var(--mono-bg)">
+                <p class="text-xs mb-2" style="color: var(--text-muted)">Details</p>
+                <pre class="text-xs font-mono whitespace-pre-wrap break-all"
+                     style="color: var(--mono-text)">{{ formatMetadata(detailLog()!.metadata!) }}</pre>
+              </div>
+            }
+          </div>
+
+        </div>
+      </div>
+    }
   `,
 })
 export class AuditLog implements OnInit {
@@ -179,6 +242,7 @@ export class AuditLog implements OnInit {
   readonly loading       = signal(true);
   readonly filterEntity  = signal('');
   readonly offset        = signal(0);
+  readonly detailLog     = signal<AuditLogEntry | null>(null);
 
   readonly entityTypes = ENTITY_TYPES;
   readonly pageSize    = PAGE_SIZE;
@@ -232,6 +296,10 @@ export class AuditLog implements OnInit {
     this.load();
   }
 
+  openDetail(log: AuditLogEntry) {
+    this.detailLog.set(log);
+  }
+
   actionStyle(action: string): string {
     return actionStyle(action);
   }
@@ -242,6 +310,14 @@ export class AuditLog implements OnInit {
       return str.length > 80 ? str.slice(0, 80) + '…' : str;
     } catch {
       return '';
+    }
+  }
+
+  formatMetadata(metadata: Record<string, unknown>): string {
+    try {
+      return JSON.stringify(metadata, null, 2);
+    } catch {
+      return String(metadata);
     }
   }
 }
