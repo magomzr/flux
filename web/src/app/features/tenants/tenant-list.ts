@@ -1,6 +1,6 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { TenantsService } from '../../core/api/tenants.service';
 import { BillingService } from '../../core/api/billing.service';
 import type { Tenant, Plan } from '../../core/models/api.models';
@@ -32,7 +32,7 @@ function generatePassword(): string {
 
 @Component({
   selector: 'app-tenant-list',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule],
   template: `
     <div class="p-6 max-w-5xl mx-auto">
 
@@ -146,11 +146,6 @@ function generatePassword(): string {
                 {{ formError() }}
               </p>
             }
-              <p class="text-xs rounded-lg px-3 py-2"
-                 style="color: var(--danger-fg); background-color: var(--danger-subtle); border: 1px solid var(--danger-fg)">
-                {{ formError() }}
-              </p>
-            }
 
             <div class="flex justify-end gap-2">
               <button type="button" (click)="cancelForm()"
@@ -219,11 +214,11 @@ function generatePassword(): string {
                   </td>
                   <td class="px-4 py-3">
                     <div class="flex items-center justify-end gap-2">
-                      <a [routerLink]="['/tenants', tenant.id, 'users']"
+                      <button (click)="goToUsers(tenant)"
                         class="text-xs transition-colors cursor-pointer"
                         style="color: var(--accent-text)">
                         Users
-                      </a>
+                      </button>
                       <button (click)="openChangePlan(tenant)"
                         class="text-xs transition-colors cursor-pointer"
                         style="color: var(--accent-text)">
@@ -372,6 +367,7 @@ function generatePassword(): string {
 export class TenantList implements OnInit {
   private readonly tenantsService  = inject(TenantsService);
   private readonly billingService  = inject(BillingService);
+  private readonly router          = inject(Router);
   private readonly fb = inject(FormBuilder);
 
   readonly tenants            = signal<Tenant[]>([]);
@@ -457,6 +453,10 @@ export class TenantList implements OnInit {
         this.saving.set(false);
       },
     });
+  }
+
+  goToUsers(tenant: Tenant) {
+    this.router.navigate(['/tenants', tenant.id, 'users']);
   }
 
   openChangePlan(tenant: Tenant) {
