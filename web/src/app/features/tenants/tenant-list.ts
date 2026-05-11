@@ -2,7 +2,8 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { TenantsService } from '../../core/api/tenants.service';
-import type { Tenant } from '../../core/models/api.models';
+import { BillingService } from '../../core/api/billing.service';
+import type { Tenant, Plan } from '../../core/models/api.models';
 
 interface NewTenantCredentials {
   tenantName: string;
@@ -120,7 +121,31 @@ function generatePassword(): string {
               </div>
             </div>
 
+            <!-- Plan -->
+            <div>
+              <p class="text-xs uppercase tracking-wider mb-3 font-medium" style="color: var(--text-muted)">Plan</p>
+              <div class="grid grid-cols-3 gap-3">
+                @for (plan of plans(); track plan.id) {
+                  <button type="button"
+                    (click)="form.patchValue({ planId: plan.id })"
+                    class="border rounded-lg p-3 text-left transition-colors cursor-pointer"
+                    [style.border-color]="form.value.planId === plan.id ? 'var(--accent)' : 'var(--border)'"
+                    [style.background-color]="form.value.planId === plan.id ? 'var(--accent-subtle)' : 'var(--bg-elevated)'">
+                    <p class="text-sm font-medium" style="color: var(--text-primary)">{{ plan.name }}</p>
+                    <p class="text-xs mt-0.5" style="color: var(--text-muted)">
+                      {{ plan.priceUsd === 0 ? 'Free' : '$' + (plan.priceUsd / 100) + '/mo' }}
+                    </p>
+                  </button>
+                }
+              </div>
+            </div>
+
             @if (formError()) {
+              <p class="text-xs rounded-lg px-3 py-2"
+                 style="color: var(--danger-fg); background-color: var(--danger-subtle); border: 1px solid var(--danger-fg)">
+                {{ formError() }}
+              </p>
+            }
               <p class="text-xs rounded-lg px-3 py-2"
                  style="color: var(--danger-fg); background-color: var(--danger-subtle); border: 1px solid var(--danger-fg)">
                 {{ formError() }}
@@ -199,6 +224,11 @@ function generatePassword(): string {
                         style="color: var(--accent-text)">
                         Users
                       </a>
+                      <button (click)="openChangePlan(tenant)"
+                        class="text-xs transition-colors cursor-pointer"
+                        style="color: var(--accent-text)">
+                        Plan
+                      </button>
                       @if (tenant.isActive) {
                         <button (click)="deactivate(tenant)"
                           class="text-xs transition-colors cursor-pointer"
@@ -265,6 +295,49 @@ function generatePassword(): string {
         </div>
       }
 
+      <!-- Change plan modal -->
+      @if (changingPlanTenant()) {
+        <div class="fixed inset-0 flex items-center justify-center z-50 px-4"
+             style="background-color: var(--bg-overlay)">
+          <div class="border rounded-xl p-6 max-w-sm w-full"
+               style="background-color: var(--bg-surface); border-color: var(--border)">
+            <h3 class="text-sm font-medium mb-1" style="color: var(--text-primary)">
+              Change plan — {{ changingPlanTenant()!.name }}
+            </h3>
+            <p class="text-xs mb-4" style="color: var(--text-muted)">
+              Select the new plan for this tenant.
+            </p>
+            <div class="grid grid-cols-1 gap-2 mb-5">
+              @for (plan of plans(); track plan.id) {
+                <button type="button"
+                  (click)="selectedPlanId.set(plan.id)"
+                  class="border rounded-lg px-4 py-3 text-left transition-colors cursor-pointer flex items-center justify-between"
+                  [style.border-color]="selectedPlanId() === plan.id ? 'var(--accent)' : 'var(--border)'"
+                  [style.background-color]="selectedPlanId() === plan.id ? 'var(--accent-subtle)' : 'transparent'">
+                  <span class="text-sm font-medium" style="color: var(--text-primary)">{{ plan.name }}</span>
+                  <span class="text-xs" style="color: var(--text-muted)">
+                    {{ plan.priceUsd === 0 ? 'Free' : '$' + (plan.priceUsd / 100) + '/mo' }}
+                  </span>
+                </button>
+              }
+            </div>
+            <div class="flex justify-end gap-2">
+              <button (click)="cancelChangePlan()"
+                class="text-sm px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+                style="color: var(--text-secondary)">
+                Cancel
+              </button>
+              <button (click)="confirmChangePlan()"
+                [disabled]="!selectedPlanId() || planSaving()"
+                class="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                style="background-color: var(--accent); color: var(--accent-fg)">
+                {{ planSaving() ? 'Saving...' : 'Apply plan' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- Delete confirm -->
       @if (deletingTenant()) {
         <div class="fixed inset-0 flex items-center justify-center z-50 px-4"
@@ -297,21 +370,27 @@ function generatePassword(): string {
   `,
 })
 export class TenantList implements OnInit {
-  private readonly tenantsService = inject(TenantsService);
+  private readonly tenantsService  = inject(TenantsService);
+  private readonly billingService  = inject(BillingService);
   private readonly fb = inject(FormBuilder);
 
-  readonly tenants        = signal<Tenant[]>([]);
-  readonly loading        = signal(true);
-  readonly saving         = signal(false);
-  readonly showForm       = signal(false);
-  readonly formError      = signal<string | null>(null);
-  readonly deletingTenant = signal<Tenant | null>(null);
-  readonly newCredentials = signal<NewTenantCredentials | null>(null);
+  readonly tenants            = signal<Tenant[]>([]);
+  readonly plans              = signal<Plan[]>([]);
+  readonly loading            = signal(true);
+  readonly saving             = signal(false);
+  readonly planSaving         = signal(false);
+  readonly showForm           = signal(false);
+  readonly formError          = signal<string | null>(null);
+  readonly deletingTenant     = signal<Tenant | null>(null);
+  readonly newCredentials     = signal<NewTenantCredentials | null>(null);
+  readonly changingPlanTenant = signal<Tenant | null>(null);
+  readonly selectedPlanId     = signal<string>('');
 
   readonly form = this.fb.nonNullable.group({
-    name:  ['', Validators.required],
-    slug:  ['', [Validators.required, Validators.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)]],
-    email: ['', [Validators.required, Validators.email]],
+    name:   ['', Validators.required],
+    slug:   ['', [Validators.required, Validators.pattern(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)]],
+    email:  ['', [Validators.required, Validators.email]],
+    planId: ['starter'],
     admin: this.fb.nonNullable.group({
       name:     ['', Validators.required],
       email:    ['', [Validators.required, Validators.email]],
@@ -321,6 +400,15 @@ export class TenantList implements OnInit {
 
   ngOnInit() {
     this.load();
+    this.billingService.getPlans().subscribe({
+      next: (data) => {
+        this.plans.set(data);
+        // Pre-select first plan
+        if (data.length > 0 && !this.form.value.planId) {
+          this.form.patchValue({ planId: data[0].id });
+        }
+      },
+    });
   }
 
   private load() {
@@ -340,15 +428,18 @@ export class TenantList implements OnInit {
     this.saving.set(true);
     this.formError.set(null);
 
-    const value = this.form.getRawValue();
+    const { planId, ...rest } = this.form.getRawValue();
 
-    this.tenantsService.create(value).subscribe({
+    this.tenantsService.create(rest).subscribe({
       next: (response: any) => {
-        // Agregar el tenant a la lista (sin las credenciales del admin)
         const { admin: _admin, ...tenant } = response;
         this.tenants.update((list) => [tenant, ...list]);
 
-        // Mostrar credenciales en modal — solo esta vez
+        // Suscribir al plan seleccionado
+        if (planId) {
+          this.billingService.subscribe(tenant.id, planId).subscribe();
+        }
+
         this.newCredentials.set({
           tenantName:    tenant.name,
           adminName:     response.admin.name,
@@ -366,6 +457,31 @@ export class TenantList implements OnInit {
         this.saving.set(false);
       },
     });
+  }
+
+  openChangePlan(tenant: Tenant) {
+    this.changingPlanTenant.set(tenant);
+    this.selectedPlanId.set('');
+  }
+
+  confirmChangePlan() {
+    const tenant = this.changingPlanTenant();
+    const planId = this.selectedPlanId();
+    if (!tenant || !planId) return;
+
+    this.planSaving.set(true);
+    this.billingService.subscribe(tenant.id, planId).subscribe({
+      next: () => {
+        this.cancelChangePlan();
+        this.planSaving.set(false);
+      },
+      error: () => this.planSaving.set(false),
+    });
+  }
+
+  cancelChangePlan() {
+    this.changingPlanTenant.set(null);
+    this.selectedPlanId.set('');
   }
 
   deactivate(tenant: Tenant) {

@@ -194,9 +194,11 @@ interface EditingCell {
                                 style="background-color: #fff"
                               ></span>
                             </button>
-                            <p class="text-xs" [style.color]="fv.publishedAt ? 'var(--text-muted)' : 'var(--warning-fg)'">
-                              {{ fv.publishedAt ? 'published' : 'draft' }}
-                            </p>
+                            @if (fv.publishedAt) {
+                              <p class="text-xs" style="color: var(--text-muted)">published</p>
+                            } @else {
+                              <p class="text-xs" style="color: var(--warning-fg)">draft</p>
+                            }
                           </div>
                         }
 
@@ -246,9 +248,16 @@ interface EditingCell {
                               </button>
                             }
 
-                            <p class="text-xs" [style.color]="fv.publishedAt ? 'var(--text-muted)' : 'var(--warning-fg)'">
-                              {{ fv.publishedAt ? 'published' : 'draft' }}
-                            </p>
+                            @if (fv.publishedAt) {
+                              <p class="text-xs" style="color: var(--text-muted)">published</p>
+                            } @else {
+                              <button (click)="publishFlag(row, env.id, fv)"
+                                class="text-xs cursor-pointer transition-colors"
+                                style="color: var(--warning-fg)"
+                                title="Publish to make it live">
+                                draft · publish
+                              </button>
+                            }
                           </div>
                         }
 
@@ -260,11 +269,22 @@ interface EditingCell {
 
                   <!-- Acciones -->
                   <td class="px-4 py-3">
-                    <button (click)="confirmDelete(row.flag)"
-                      class="transition-colors cursor-pointer text-xs"
-                      style="color: var(--text-muted)">
-                      Delete
-                    </button>
+                    <div class="flex items-center justify-end gap-3">
+                      <!-- Publish: aparece si algún ambiente tiene draft -->
+                      @if (hasDraft(row)) {
+                        <button (click)="publishAllDrafts(row)"
+                          class="text-xs transition-colors cursor-pointer"
+                          style="color: var(--warning-fg)"
+                          title="Publish all draft environments">
+                          Publish
+                        </button>
+                      }
+                      <button (click)="confirmDelete(row.flag)"
+                        class="transition-colors cursor-pointer text-xs"
+                        style="color: var(--text-muted)">
+                        Delete
+                      </button>
+                    </div>
                   </td>
 
                 </tr>
@@ -460,6 +480,47 @@ export class FlagList implements OnInit {
 
   cancelEdit() {
     this.editingCell.set(null);
+  }
+
+  // ─── Publish ──────────────────────────────────────────────────────────────
+
+  hasDraft(row: FlagRow): boolean {
+    return Object.values(row.values).some((fv) => !fv.publishedAt);
+  }
+
+  publishAllDrafts(row: FlagRow) {
+    const projectId = this.projectId();
+    const drafts = Object.entries(row.values).filter(([, fv]) => !fv.publishedAt);
+
+    for (const [environmentId, fv] of drafts) {
+      this.flagsService
+        .publishFlagValue(projectId, row.flag.id, environmentId)
+        .subscribe({
+          next: (updated) => {
+            this.rows.update((rows) =>
+              rows.map((r) => r.flag.id !== row.flag.id ? r : {
+                ...r,
+                values: { ...r.values, [environmentId]: updated },
+              }),
+            );
+          },
+        });
+    }
+  }
+
+  publishFlag(row: FlagRow, environmentId: string, fv: FlagValue) {
+    this.flagsService
+      .publishFlagValue(this.projectId(), row.flag.id, environmentId)
+      .subscribe({
+        next: (updated) => {
+          this.rows.update((rows) =>
+            rows.map((r) => r.flag.id !== row.flag.id ? r : {
+              ...r,
+              values: { ...r.values, [environmentId]: updated },
+            }),
+          );
+        },
+      });
   }
 
   // ─── Create ───────────────────────────────────────────────────────────────
