@@ -76,6 +76,7 @@ export class FlagsService {
     return this.db.query.flags.findMany({
       where: eq(flags.projectId, projectId),
       orderBy: (f, { asc }) => asc(f.key),
+      with: { flagValues: true },
     });
   }
 

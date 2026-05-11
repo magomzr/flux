@@ -7,7 +7,14 @@ import type { Flag, FlagValue, Environment } from '../../core/models/api.models'
 
 interface FlagRow {
   flag: Flag;
-  values: Record<string, FlagValue>; // environmentId → FlagValue
+  values: Record<string, FlagValue>;
+}
+
+/** Which cell is being edited: flagId + environmentId */
+interface EditingCell {
+  flagId: string;
+  environmentId: string;
+  currentValue: string;
 }
 
 @Component({
@@ -64,14 +71,17 @@ interface FlagRow {
             </div>
 
             <div class="space-y-1">
-              <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Description <span class="normal-case" style="color: var(--text-muted)">(optional)</span></label>
+              <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">
+                Description <span class="normal-case" style="color: var(--text-muted)">(optional)</span>
+              </label>
               <input formControlName="description" placeholder="What does this flag control?"
                 class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
                 style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)" />
             </div>
 
             @if (formError()) {
-              <p class="col-span-2 text-xs rounded-lg px-3 py-2" style="color: var(--danger-fg); background-color: var(--danger-subtle); border: 1px solid var(--danger-fg)">
+              <p class="col-span-2 text-xs rounded-lg px-3 py-2"
+                 style="color: var(--danger-fg); background-color: var(--danger-subtle); border: 1px solid var(--danger-fg)">
                 {{ formError() }}
               </p>
             }
@@ -106,7 +116,9 @@ interface FlagRow {
       @if (!loading() && environments().length === 0) {
         <div class="text-center py-12 border border-dashed rounded-xl" style="border-color: var(--border)">
           <p class="text-sm" style="color: var(--text-muted)">No environments yet.</p>
-          <p class="text-xs mt-1" style="color: var(--text-muted)">Create environments first to manage flag values.</p>
+          <p class="text-xs mt-1" style="color: var(--text-muted)">
+            Go to the <strong>Environments</strong> tab to create at least one.
+          </p>
         </div>
       }
 
@@ -120,14 +132,17 @@ interface FlagRow {
 
       <!-- Tabla de flags -->
       @if (!loading() && environments().length > 0 && rows().length > 0) {
-        <div class="border rounded-xl overflow-hidden" style="border-color: var(--border)">
+        <div class="border rounded-xl overflow-x-auto" style="border-color: var(--border)">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b" style="border-color: var(--border)">
-                <th class="text-left text-xs uppercase tracking-wider px-4 py-3 font-medium w-64" style="color: var(--text-muted)">Flag</th>
-                <th class="text-left text-xs uppercase tracking-wider px-4 py-3 font-medium" style="color: var(--text-muted)">Type</th>
+                <th class="text-left text-xs uppercase tracking-wider px-4 py-3 font-medium"
+                    style="color: var(--text-muted); min-width: 200px">Flag</th>
+                <th class="text-left text-xs uppercase tracking-wider px-4 py-3 font-medium"
+                    style="color: var(--text-muted)">Type</th>
                 @for (env of environments(); track env.id) {
-                  <th class="text-center text-xs uppercase tracking-wider px-4 py-3 font-medium" style="color: var(--text-muted)">
+                  <th class="text-center text-xs uppercase tracking-wider px-4 py-3 font-medium"
+                      style="color: var(--text-muted); min-width: 140px">
                     <span class="inline-flex items-center gap-1.5">
                       @if (env.color) {
                         <span class="w-2 h-2 rounded-full flex-shrink-0"
@@ -142,7 +157,8 @@ interface FlagRow {
             </thead>
             <tbody>
               @for (row of rows(); track row.flag.id) {
-                <tr class="border-b last:border-0 transition-colors" style="border-color: var(--table-border)">
+                <tr class="border-b last:border-0 transition-colors"
+                    style="border-color: var(--table-border)">
 
                   <!-- Flag info -->
                   <td class="px-4 py-3">
@@ -152,32 +168,90 @@ interface FlagRow {
 
                   <!-- Type badge -->
                   <td class="px-4 py-3">
-                    <span class="text-xs px-2 py-0.5 rounded font-mono" style="color: var(--text-secondary); background-color: var(--bg-elevated)">
+                    <span class="text-xs px-2 py-0.5 rounded font-mono"
+                          style="color: var(--text-secondary); background-color: var(--bg-elevated)">
                       {{ row.flag.type }}
                     </span>
                   </td>
 
-                  <!-- Toggle por ambiente -->
+                  <!-- Valor por ambiente -->
                   @for (env of environments(); track env.id) {
                     <td class="px-4 py-3 text-center">
                       @if (row.values[env.id]; as fv) {
-                        <button
-                          (click)="toggleFlag(row, env.id, fv)"
-                          class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer"
-                          [style.background-color]="fv.enabled ? 'var(--accent)' : 'var(--bg-elevated)'"
-                          [title]="fv.enabled ? 'Disable in ' + env.name : 'Enable in ' + env.name"
-                        >
-                          <span
-                            class="inline-block h-3.5 w-3.5 rounded-full transition-transform"
-                            [class]="fv.enabled ? 'translate-x-4' : 'translate-x-1'"
-                            style="background-color: #fff"
-                          ></span>
-                        </button>
-                        @if (fv.publishedAt) {
-                          <p class="text-xs mt-1" style="color: var(--text-muted)">published</p>
-                        } @else {
-                          <p class="text-xs mt-1" style="color: var(--warning-fg)">draft</p>
+
+                        <!-- Boolean: toggle switch -->
+                        @if (row.flag.type === 'boolean') {
+                          <div class="flex flex-col items-center gap-1">
+                            <button
+                              (click)="toggleFlag(row, env.id, fv)"
+                              class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer"
+                              [style.background-color]="fv.enabled ? 'var(--accent)' : 'var(--bg-elevated)'"
+                              [title]="fv.enabled ? 'Disable in ' + env.name : 'Enable in ' + env.name"
+                            >
+                              <span
+                                class="inline-block h-3.5 w-3.5 rounded-full transition-transform"
+                                [class]="fv.enabled ? 'translate-x-4' : 'translate-x-1'"
+                                style="background-color: #fff"
+                              ></span>
+                            </button>
+                            <p class="text-xs" [style.color]="fv.publishedAt ? 'var(--text-muted)' : 'var(--warning-fg)'">
+                              {{ fv.publishedAt ? 'published' : 'draft' }}
+                            </p>
+                          </div>
                         }
+
+                        <!-- String / Number / JSON: editable value -->
+                        @if (row.flag.type !== 'boolean') {
+                          <div class="flex flex-col items-center gap-1">
+
+                            <!-- Toggle enabled -->
+                            <button
+                              (click)="toggleFlag(row, env.id, fv)"
+                              class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer"
+                              [style.background-color]="fv.enabled ? 'var(--accent)' : 'var(--bg-elevated)'"
+                              [title]="fv.enabled ? 'Disable' : 'Enable'"
+                            >
+                              <span
+                                class="inline-block h-3.5 w-3.5 rounded-full transition-transform"
+                                [class]="fv.enabled ? 'translate-x-4' : 'translate-x-1'"
+                                style="background-color: #fff"
+                              ></span>
+                            </button>
+
+                            <!-- Inline value editor -->
+                            @if (isEditing(row.flag.id, env.id)) {
+                              <div class="flex items-center gap-1 mt-1">
+                                <input
+                                  [value]="editingCell()!.currentValue"
+                                  (input)="updateEditValue($any($event.target).value)"
+                                  (keydown.enter)="saveValue(row, env.id, fv)"
+                                  (keydown.escape)="cancelEdit()"
+                                  class="w-24 rounded px-1.5 py-0.5 text-xs font-mono border focus:outline-none"
+                                  style="background-color: var(--input-bg); border-color: var(--input-focus); color: var(--text-primary)"
+                                  autofocus
+                                />
+                                <button (click)="saveValue(row, env.id, fv)"
+                                  class="text-xs cursor-pointer" style="color: var(--success-fg)">✓</button>
+                                <button (click)="cancelEdit()"
+                                  class="text-xs cursor-pointer" style="color: var(--text-muted)">✕</button>
+                              </div>
+                            } @else {
+                              <button
+                                (click)="startEdit(row.flag.id, env.id, fv.value ?? '')"
+                                class="text-xs font-mono px-1.5 py-0.5 rounded transition-colors cursor-pointer max-w-28 truncate"
+                                style="color: var(--text-secondary); background-color: var(--bg-elevated)"
+                                [title]="fv.value ?? 'click to set value'"
+                              >
+                                {{ fv.value ? (fv.value.length > 12 ? fv.value.slice(0, 12) + '…' : fv.value) : '—' }}
+                              </button>
+                            }
+
+                            <p class="text-xs" [style.color]="fv.publishedAt ? 'var(--text-muted)' : 'var(--warning-fg)'">
+                              {{ fv.publishedAt ? 'published' : 'draft' }}
+                            </p>
+                          </div>
+                        }
+
                       } @else {
                         <span class="text-xs" style="color: var(--text-muted)">—</span>
                       }
@@ -202,8 +276,10 @@ interface FlagRow {
 
       <!-- Delete confirm -->
       @if (deletingFlag()) {
-        <div class="fixed inset-0 flex items-center justify-center z-50 px-4" style="background-color: var(--bg-overlay)">
-          <div class="border rounded-xl p-6 max-w-sm w-full" style="background-color: var(--bg-surface); border-color: var(--border)">
+        <div class="fixed inset-0 flex items-center justify-center z-50 px-4"
+             style="background-color: var(--bg-overlay)">
+          <div class="border rounded-xl p-6 max-w-sm w-full"
+               style="background-color: var(--bg-surface); border-color: var(--border)">
             <h3 class="text-sm font-medium mb-2" style="color: var(--text-primary)">Delete flag</h3>
             <p class="text-sm mb-5" style="color: var(--text-secondary)">
               This will permanently delete
@@ -243,6 +319,7 @@ export class FlagList implements OnInit {
   readonly showForm     = signal(false);
   readonly formError    = signal<string | null>(null);
   readonly deletingFlag = signal<Flag | null>(null);
+  readonly editingCell  = signal<EditingCell | null>(null);
 
   readonly canPublish = computed(() => this.auth.hasPermission('publish:flag'));
 
@@ -256,6 +333,8 @@ export class FlagList implements OnInit {
   ngOnInit() {
     this.load();
   }
+
+  // ─── Load ─────────────────────────────────────────────────────────────────
 
   private load() {
     const projectId = this.projectId();
@@ -289,21 +368,16 @@ export class FlagList implements OnInit {
     });
   }
 
+  // ─── Toggle enabled ───────────────────────────────────────────────────────
+
   toggleFlag(row: FlagRow, environmentId: string, fv: FlagValue) {
-    const projectId = this.projectId();
+    const projectId  = this.projectId();
     const newEnabled = !fv.enabled;
 
-    // Optimistic update
     this.rows.update((rows) =>
-      rows.map((r) => {
-        if (r.flag.id !== row.flag.id) return r;
-        return {
-          ...r,
-          values: {
-            ...r.values,
-            [environmentId]: { ...fv, enabled: newEnabled },
-          },
-        };
+      rows.map((r) => r.flag.id !== row.flag.id ? r : {
+        ...r,
+        values: { ...r.values, [environmentId]: { ...fv, enabled: newEnabled } },
       }),
     );
 
@@ -312,29 +386,83 @@ export class FlagList implements OnInit {
       .subscribe({
         next: (updated) => {
           this.rows.update((rows) =>
-            rows.map((r) => {
-              if (r.flag.id !== row.flag.id) return r;
-              return {
-                ...r,
-                values: { ...r.values, [environmentId]: updated },
-              };
+            rows.map((r) => r.flag.id !== row.flag.id ? r : {
+              ...r,
+              values: { ...r.values, [environmentId]: updated },
             }),
           );
         },
         error: () => {
-          // Revertir si falla
+          // Revertir
           this.rows.update((rows) =>
-            rows.map((r) => {
-              if (r.flag.id !== row.flag.id) return r;
-              return {
-                ...r,
-                values: { ...r.values, [environmentId]: fv },
-              };
+            rows.map((r) => r.flag.id !== row.flag.id ? r : {
+              ...r,
+              values: { ...r.values, [environmentId]: fv },
             }),
           );
         },
       });
   }
+
+  // ─── Inline value editing ─────────────────────────────────────────────────
+
+  isEditing(flagId: string, environmentId: string): boolean {
+    const c = this.editingCell();
+    return c?.flagId === flagId && c?.environmentId === environmentId;
+  }
+
+  startEdit(flagId: string, environmentId: string, currentValue: string) {
+    this.editingCell.set({ flagId, environmentId, currentValue });
+  }
+
+  updateEditValue(value: string) {
+    const c = this.editingCell();
+    if (c) this.editingCell.set({ ...c, currentValue: value });
+  }
+
+  saveValue(row: FlagRow, environmentId: string, fv: FlagValue) {
+    const cell = this.editingCell();
+    if (!cell) return;
+
+    const newValue = cell.currentValue;
+    this.cancelEdit();
+
+    // Optimistic update
+    this.rows.update((rows) =>
+      rows.map((r) => r.flag.id !== row.flag.id ? r : {
+        ...r,
+        values: { ...r.values, [environmentId]: { ...fv, value: newValue } },
+      }),
+    );
+
+    this.flagsService
+      .updateFlagValue(this.projectId(), row.flag.id, environmentId, { value: newValue })
+      .subscribe({
+        next: (updated) => {
+          this.rows.update((rows) =>
+            rows.map((r) => r.flag.id !== row.flag.id ? r : {
+              ...r,
+              values: { ...r.values, [environmentId]: updated },
+            }),
+          );
+        },
+        error: () => {
+          // Revertir
+          this.rows.update((rows) =>
+            rows.map((r) => r.flag.id !== row.flag.id ? r : {
+              ...r,
+              values: { ...r.values, [environmentId]: fv },
+            }),
+          );
+        },
+      });
+  }
+
+  cancelEdit() {
+    this.editingCell.set(null);
+  }
+
+  // ─── Create ───────────────────────────────────────────────────────────────
 
   create() {
     if (this.form.invalid || this.saving()) return;
@@ -349,8 +477,7 @@ export class FlagList implements OnInit {
       key, name, type: type as any,
       description: description || undefined,
     }).subscribe({
-      next: (flag) => {
-        // Recargar para obtener los flag_values generados
+      next: () => {
         this.loadFlags();
         this.cancelForm();
         this.saving.set(false);
