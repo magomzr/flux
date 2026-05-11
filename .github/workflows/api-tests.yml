@@ -4,13 +4,17 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - "api/**"
-      - ".github/workflows/api-tests.yml"
+      - 'api/**'
+      - '.github/workflows/api-tests.yml'
   pull_request:
     branches: [main, develop]
     paths:
-      - "api/**"
-      - ".github/workflows/api-tests.yml"
+      - 'api/**'
+      - '.github/workflows/api-tests.yml'
+
+env:
+  # Fuerza las GitHub Actions a correr con Node.js 24
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   test:
@@ -28,12 +32,12 @@ jobs:
       - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: "24.15.0"
+          node-version: '24.15.0'
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: "11.0.8"
+          version: '11.0.8'
 
       - name: Get pnpm store path
         id: pnpm-cache
@@ -53,8 +57,8 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
-      - name: Run unit tests
-        run: pnpm test --ci
+      - name: Run unit tests with coverage
+        run: pnpm test:cov --ci
 
       - name: Upload coverage
         if: always()
