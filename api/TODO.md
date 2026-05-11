@@ -76,17 +76,17 @@ Flux sirve tres escenarios distintos con lógicas de precio diferentes:
 - [ ] `assets` — upload, storage en R2/S3, URLs firmadas
 - [ ] Redis para invalidación de cache entre múltiples instancias
 - [ ] Cleanup periódico de refresh tokens expirados (cron job)
-- [ ] **Unit tests del API** — cobertura completa de todos los módulos:
+- [x] **Unit tests del API** — cobertura completa (105 tests, 10 suites, ~2.4s)
   - [x] `auth` — login, refresh, logout, revocación de familia, changePassword (11 tests)
   - [x] `billing` — planes, suscripciones, forecast, overage solo en Scale (17 tests)
   - [x] `users` — CRUD, validación de credenciales, permisos por rol, hashing (19 tests)
   - [x] `flags` — CRUD, flag_values automáticos, cache invalidation, publish (11 tests)
+  - [x] `tenants` — CRUD, creación con admin automático, slug único (8 tests)
+  - [x] `projects` — CRUD, deactivate, delete con audit (7 tests)
+  - [x] `environments` — CRUD, lógica de isDefault, clearDefault (8 tests)
+  - [x] `audit` — escritura inmutable, serialización JSON, never throws, query con filtros (8 tests)
+  - [x] `delivery/flag-cache` — lazy load, cache hit, invalidación por evento, ETag determinístico (11 tests)
   - [x] Guards — `TenantGuard` (8 tests), `PermissionsGuard` (4 tests)
-  - [ ] `tenants` — CRUD, creación con admin automático
-  - [ ] `projects` — CRUD, ownership check
-  - [ ] `environments` — CRUD, lógica de isDefault
-  - [ ] `delivery` — cache L1/L2, ETag, invalidación por eventos
-  - [ ] `audit` — escritura inmutable, consulta por filtros
 - [ ] Tests del módulo `auth` (login, refresh, revocación)
 - [ ] Tests del módulo `tenants`
 - [ ] Actualizar README con estado actual del proyecto
