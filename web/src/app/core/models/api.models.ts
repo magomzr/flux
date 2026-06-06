@@ -87,7 +87,6 @@ export interface Plan {
   maxEvaluationsMonth: number | null;
   maxAssetStorageMb: number | null;
   hasSse: boolean;
-  pollIntervalSeconds: number;
   priceUsd: number;
 }
 

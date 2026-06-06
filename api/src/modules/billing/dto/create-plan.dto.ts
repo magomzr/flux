@@ -48,11 +48,6 @@ export class CreatePlanDto {
   hasSse?: boolean;
 
   @IsInt()
-  @Min(1)
-  @IsOptional()
-  pollIntervalSeconds?: number;
-
-  @IsInt()
   @Min(0)
   @IsOptional()
   priceUsd?: number; // en centavos

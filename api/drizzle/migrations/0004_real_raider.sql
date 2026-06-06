@@ -1,0 +1,1 @@
+ALTER TABLE "plans" DROP COLUMN "poll_interval_seconds";

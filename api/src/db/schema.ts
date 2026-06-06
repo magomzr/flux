@@ -166,7 +166,7 @@ export const assets = pgTable('assets', {
 // ─── Billing plans ────────────────────────────────────────────────────────────
 
 export const plans = pgTable('plans', {
-  id: text('id').primaryKey(), // 'free','standard','pro'
+  id: text('id').primaryKey(), // 'starter','studio','scale'
   name: text('name').notNull(),
   maxFlags: integer('max_flags'), // null = ilimitado
   maxProjects: integer('max_projects'),
@@ -174,7 +174,6 @@ export const plans = pgTable('plans', {
   maxEvaluationsMonth: integer('max_evaluations_month'),
   maxAssetStorageMb: integer('max_asset_storage_mb'),
   hasSse: boolean('has_sse').notNull().default(false),
-  pollIntervalSeconds: integer('poll_interval_seconds').notNull().default(60),
   priceUsd: integer('price_usd').notNull().default(0), // en centavos
 });
 

@@ -105,7 +105,6 @@ export class ApiKeyCacheService {
         expiresAt: sdkApiKeys.expiresAt,
         tenantId: projects.tenantId,
         hasSse: plans.hasSse,
-        pollIntervalSeconds: plans.pollIntervalSeconds,
       })
       .from(sdkApiKeys)
       .innerJoin(environments, eq(sdkApiKeys.environmentId, environments.id))
@@ -132,7 +131,6 @@ export class ApiKeyCacheService {
       environmentId: row.environmentId,
       tenantId: row.tenantId,
       hasSse: row.hasSse,
-      pollIntervalSeconds: row.pollIntervalSeconds,
       expiresAt: row.expiresAt,
       _hash: row.keyHash,
     }));

@@ -10,7 +10,6 @@ export interface CostEstimate {
   overageCostUsd: number;
   totalCostUsd: number;
   hasSse: boolean;
-  pollIntervalSeconds: number;
   breakdown: Record<string, number>;
 }
 

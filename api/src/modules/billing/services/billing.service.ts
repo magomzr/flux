@@ -47,7 +47,6 @@ export class BillingService {
         maxEvaluationsMonth: dto.maxEvaluationsMonth ?? null,
         maxAssetStorageMb: dto.maxAssetStorageMb ?? null,
         hasSse: dto.hasSse ?? false,
-        pollIntervalSeconds: dto.pollIntervalSeconds ?? 60,
         priceUsd: dto.priceUsd ?? 0,
       })
       .returning();
@@ -268,7 +267,6 @@ export class BillingService {
         overageCostUsd: Math.round(overageCostUsd * 100) / 100,
         totalCostUsd: Math.round((baseCostUsd + overageCostUsd) * 100) / 100,
         hasSse: plan.hasSse,
-        pollIntervalSeconds: plan.pollIntervalSeconds,
         breakdown,
       };
     });

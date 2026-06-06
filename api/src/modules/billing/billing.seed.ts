@@ -23,7 +23,6 @@ const PLANS = [
     maxEvaluationsMonth: null as number | null,
     maxAssetStorageMb: null as number | null,
     hasSse: false,
-    pollIntervalSeconds: 60,
     priceUsd: 0,
   },
   {
@@ -35,7 +34,6 @@ const PLANS = [
     maxEvaluationsMonth: null as number | null,
     maxAssetStorageMb: null as number | null,
     hasSse: true,
-    pollIntervalSeconds: 10,
     priceUsd: 4900,
   },
   {
@@ -47,7 +45,6 @@ const PLANS = [
     maxEvaluationsMonth: 1_000_000,
     maxAssetStorageMb: 5000,
     hasSse: true,
-    pollIntervalSeconds: 5,
     priceUsd: 9900,
   },
 ] as const;
@@ -75,7 +72,6 @@ export class BillingSeed implements OnApplicationBootstrap {
             maxEvaluationsMonth:  sql`excluded.max_evaluations_month`,
             maxAssetStorageMb:    sql`excluded.max_asset_storage_mb`,
             hasSse:               sql`excluded.has_sse`,
-            pollIntervalSeconds:  sql`excluded.poll_interval_seconds`,
             priceUsd:             sql`excluded.price_usd`,
           },
         });

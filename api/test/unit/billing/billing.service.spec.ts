@@ -13,7 +13,6 @@ const mockPlanFree = {
   maxEvaluationsMonth: null,
   maxAssetStorageMb: null,
   hasSse: false,
-  pollIntervalSeconds: 60,
   priceUsd: 0,
 };
 
@@ -26,7 +25,6 @@ const mockPlanStudio = {
   maxEvaluationsMonth: null,
   maxAssetStorageMb: null,
   hasSse: true,
-  pollIntervalSeconds: 10,
   priceUsd: 4900,
 };
 
@@ -39,7 +37,6 @@ const mockPlanScale = {
   maxEvaluationsMonth: 1_000_000,
   maxAssetStorageMb: 5000,
   hasSse: true,
-  pollIntervalSeconds: 5,
   priceUsd: 9900,
 };
 

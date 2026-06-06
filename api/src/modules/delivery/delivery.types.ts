@@ -25,7 +25,6 @@ export interface CachedApiKey {
   environmentId: string;
   tenantId: string;
   hasSse: boolean;
-  pollIntervalSeconds: number;
   expiresAt: Date | null;
 }
 

@@ -188,7 +188,7 @@ import type { Subscription, UsageForecast } from '../../core/models/api.models';
                 @if (!est.hasSse) {
                   <p class="text-xs mt-2" style="color: var(--text-muted)">No SSE</p>
                 } @else {
-                  <p class="text-xs mt-2" style="color: var(--text-muted)">SSE included · {{ est.pollIntervalSeconds }}s polling</p>
+                  <p class="text-xs mt-2" style="color: var(--text-muted)">SSE included</p>
                 }
               </div>
             }

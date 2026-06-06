@@ -224,24 +224,59 @@ La SDK API es la superficie que consume la SDK publicada para los clientes. Aute
 
 ```
 GET  /sdk/flags
-     Query: userId, [atributos de targeting opcionales]
-     Devuelve todos los flags evaluados para el contexto dado.
+     Devuelve todos los flags evaluados para el ambiente.
      Respuesta desde cache en memoria. Sin I/O a DB.
+     Soporta ETag / If-None-Match → 304 Not Modified si nada cambió.
 
 GET  /sdk/flags/:key
      Evaluación de un flag específico.
 
 SSE  /sdk/stream
      Conexión persistente. Notifica cuando cambia cualquier flag del ambiente.
-     Solo disponible en plan standard+.
+     Solo disponible en plan Studio/Scale.
 ```
+
+### Modelo de delivery: on-demand, sin polling
+
+Flux NO usa polling automático desde la SDK. La decisión de cuándo refrescar los flags es del developer que integra la SDK, no del sistema.
+
+**¿Por qué?**
+- Un cambio de flag raramente necesita propagarse en segundos a usuarios activos.
+- El caso más común es: "activé esta feature, los nuevos usuarios que entren la verán" — eso funciona con carga al iniciar.
+- El polling consume recursos del servidor y del cliente sin beneficio claro para la mayoría de casos.
+- Si alguien necesita propagación instantánea, SSE es la respuesta correcta — no polling cada 5 segundos.
+
+**Cómo funciona la SDK:**
+
+```typescript
+// 1. Inicialización — carga flags una vez
+SDK.init({ apiKey: 'flux_production_...' });
+
+// 2. Lectura — siempre del cache local, sin red
+const title = SDK.getFlag('title');
+
+// 3. Refresh — el developer decide cuándo
+// Opciones naturales: al navegar, al hacer login, al volver del background
+await SDK.refresh();
+
+// 4. SSE (plan Studio/Scale) — opcional
+// Para kill switches o cambios que deben propagarse instantáneamente
+SDK.connect(); // abre conexión SSE → actualizaciones push
+```
+
+**Momentos recomendados para llamar `refresh()`:**
+- Al inicializar la app
+- Al hacer login / cambiar de usuario
+- Al navegar a una sección nueva (SPA)
+- Al volver del background (mobile)
+- Manualmente desde un botón de "reload" en la UI del admin
 
 ### SDK disponibles (roadmap)
 
-- `@flux/node` — Node.js / TypeScript
-- `@flux/browser` — Browser / Angular
+- `@flux/js` — Node.js / TypeScript / Browser
+- `@flux/angular` — wrapper para Angular con signals
 
-La SDK mantiene un cache local de flags, hace polling en background o se suscribe al stream SSE, y evalúa flags localmente con el contexto del usuario. El HTTP es transparente para quien usa la SDK.
+La SDK mantiene un cache local de flags y evalúa localmente. El HTTP es transparente para quien usa la SDK.
 
 ---
 
