@@ -1,362 +1,258 @@
-# Flux — Architecture & Deployment on AWS
+# Flux — Architecture
 
-Este documento es una guía honesta y práctica sobre cómo desplegar Flux en AWS, cuánto cuesta, qué tiene sentido y qué no, y cómo evoluciona la arquitectura a medida que crece el negocio.
-
----
-
-## La pregunta honesta primero
-
-> ¿Vale la pena montar todo esto en AWS para 2-4 clientes?
-
-**Respuesta corta: no todavía.**
-
-Para 2-4 tenants con uso moderado, un VPS de $20-40/mes en Railway, Render o Fly.io es suficiente, más barato, y requiere cero gestión de infraestructura. AWS tiene sentido cuando necesitas control fino, compliance, o escala real.
-
-Dicho eso, este documento asume que quieres AWS porque estás construyendo para el futuro y quieres entender el mapa completo desde ya.
+Documentación técnica del sistema: cómo está diseñado, cómo se despliega, y qué decisiones de infraestructura se tomaron.
 
 ---
 
-## Arquitectura objetivo
+## System design
+
+### Superficies
+
+Flux expone dos APIs completamente separadas desde el mismo proceso:
 
 ```
-Internet
-    │
-    ▼
-┌─────────────────────────────────────────────────────────────┐
-│  Route 53 (DNS)                                             │
-│  flux.tudominio.com → ALB                                   │
-└─────────────────────────────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────────────────────────────┐
-│  ACM (SSL/TLS certificate — gratis)                         │
-└─────────────────────────────────────────────────────────────┘
-    │
-    ▼
-┌─────────────────────────────────────────────────────────────┐
-│  ALB — Application Load Balancer                            │
-│  Reglas de routing:                                         │
-│    /sdk/*  → Target Group: flux-delivery (Go, futuro)       │
-│    /*      → Target Group: flux-api (NestJS)                │
-└─────────────────────────────────────────────────────────────┘
-    │                    │
-    ▼                    ▼
-┌──────────────┐  ┌──────────────────────────────────────────┐
-│ ECS Fargate  │  │ ECS Fargate                              │
-│ flux-api     │  │ flux-delivery (futuro — Go)              │
-│ NestJS       │  │ SDK API: /sdk/flags, /sdk/stream         │
-│ 0.25vCPU     │  │ 0.25vCPU / 512MB                        │
-│ 512MB        │  └──────────────────────────────────────────┘
-└──────────────┘
-    │
-    ├──────────────────────────────────────────────┐
-    ▼                                              ▼
-┌──────────────────────────┐  ┌────────────────────────────────┐
-│ RDS PostgreSQL           │  │ ElastiCache Redis              │
-│ db.t4g.micro             │  │ cache.t4g.micro                │
-│ Single-AZ (dev/staging)  │  │ (post-MVP — invalidación       │
-│ Multi-AZ (producción)    │  │  de cache entre instancias)    │
-└──────────────────────────┘  └────────────────────────────────┘
-    │
-    ▼
-┌──────────────────────────┐
-│ S3 + CloudFront          │
-│ Assets estáticos         │
-│ (módulo assets — futuro) │
-└──────────────────────────┘
+┌──────────────────────────────────────────────────────┐
+│                    flux-api (NestJS)                  │
+│                                                      │
+│  Dashboard API                SDK API                │
+│  ─────────────                ────────               │
+│  JWT RS256 auth               API Key auth           │
+│  CRUD de recursos             GET /sdk/flags         │
+│  Audit, billing, users        GET /sdk/flags/:key    │
+│  Gestión de flags/envs        SSE /sdk/stream        │
+│                                                      │
+│  Consumido por:               Consumido por:         │
+│  web/ (Angular dashboard)     SDK del cliente        │
+└──────────────────────────────────────────────────────┘
 ```
 
----
+El Dashboard API es la gestión. El SDK API es la entrega — optimizada para latencia mínima y throughput máximo.
 
-## Servicios usados y por qué
+### Multi-tenancy
 
-### ECS Fargate — el API
+Modelo: **shared database, shared schema**. Todos los tenants viven en la misma base de datos con aislamiento lógico por `tenant_id`.
 
-Fargate corre los contenedores sin gestionar servidores. Pagas por vCPU y memoria mientras el contenedor está corriendo.
+```
+tenants
+  └── users          (tenant_id FK)
+  └── projects       (tenant_id FK → cascade)
+       └── environments   (project_id FK → cascade)
+            └── sdk_api_keys  (environment_id FK → cascade)
+            └── flag_values   (environment_id FK → cascade)
+       └── flags          (project_id FK → cascade)
+  └── subscriptions  (tenant_id FK → cascade)
+  └── usage_records  (tenant_id FK → cascade)
+  └── audit_logs     (tenant_id FK → set null)
+```
 
-**Por qué Fargate y no EC2:**
-- Sin gestión de instancias, parches, AMIs
-- Escala a cero si quieres (aunque para producción conviene tener al menos 1 tarea siempre activa)
-- Ideal para cargas predecibles y moderadas como Flux
+El `TenantGuard` verifica ownership en cada request. Funciona con `@TenantResource({ param, via? })` que le indica al guard cómo resolver el `tenant_id` de la entidad accedida:
 
-**Por qué no Lambda:**
-- Flux tiene conexiones SSE persistentes — Lambda tiene timeout de 15 minutos y no soporta conexiones largas bien
-- El cache en memoria de flags no sobrevive entre invocaciones de Lambda
-- Cold starts afectarían la latencia del SDK endpoint
+- `{ param: 'tenantId' }` — directo del path
+- `{ param: 'projectId', via: 'project' }` — resuelve project → tenant via DB
+- `{ param: 'id', via: 'environment' }` — resuelve environment → project → tenant
 
-### RDS PostgreSQL — la base de datos
+Roles internos (`super_admin`, `ops`) saltan la verificación.
 
-Base de datos gestionada. Backups automáticos, failover, parches de seguridad.
+### Permisos
 
-**Por qué no Aurora Serverless:**
-- Aurora Serverless v2 tiene un mínimo de 0.5 ACUs (~$43/mes) incluso sin tráfico
-- Para Flux con 2-4 tenants, un `db.t4g.micro` es más que suficiente y más barato
-- Migrar a Aurora cuando el volumen lo justifique es straightforward
+Los permisos son fijos en código, no en DB. Cada rol tiene un set predefinido de permissions que se incluyen en el JWT al hacer login:
 
-### ElastiCache Redis — cache distribuido
+```
+JWT payload: { sub, name, email, tenantId, role, permissions[] }
+```
 
-**Cuándo lo necesitas:** cuando tengas más de una instancia de `flux-api` corriendo. El cache de flags vive en memoria de cada instancia — si tienes dos instancias y publicas un flag, solo una invalida su cache. Redis resuelve eso con pub/sub.
+El `PermissionsGuard` verifica que el usuario tenga todos los permisos requeridos por el endpoint. No hay consulta a DB — todo vive en el token.
 
-**Cuándo NO lo necesitas:** con una sola instancia de Fargate (que es suficiente para empezar), Redis es overhead innecesario. El cache en memoria funciona perfectamente.
+### Delivery — el hot path
 
-### ALB — Application Load Balancer
+El endpoint `/sdk/flags` es el más consumido. Diseñado para responder en microsegundos:
 
-Necesario para HTTPS y para el routing futuro entre `flux-api` y `flux-delivery` (Go). También maneja health checks y distribución de tráfico entre instancias.
+```
+Request → SdkApiKeyGuard (cache L1/L2) → FlagCacheService (Map en memoria) → Response
+```
 
-### Route 53 + ACM
+Capas de cache:
 
-DNS gestionado y certificados SSL gratuitos. ACM renueva automáticamente.
+1. **API Key Cache L1**: `rawKey → CachedApiKey`. Después del primer bcrypt, la key se valida en O(1).
+2. **API Key Cache L2**: `prefix → CachedApiKeyInternal[]`. Solo se consulta en L1 miss.
+3. **Flag Cache**: `environmentId → Map<flagKey, { enabled, value, type }>`. Se carga lazy desde DB, se invalida por evento cuando un flag cambia.
+4. **ETag**: hash SHA1 del estado de los flags. El cliente envía `If-None-Match` → si coincide, responde 304 sin body.
 
-### S3 + CloudFront
+Invalidación: cuando `FlagsService` muta un flag, emite `FLAG_CHANGED_EVENT` via `EventEmitter2`. `FlagCacheService` escucha y elimina la entrada del ambiente. El próximo request recarga desde DB.
 
-Para el módulo de assets (futuro). Los archivos que los tenants suben se guardan en S3 y se sirven via CloudFront con URLs firmadas.
+### SDK — modelo on-demand
 
----
+La SDK no hace polling por defecto. Carga flags una vez al inicializar y los sirve desde cache local. El developer decide cuándo refrescar:
 
-## Costos reales (us-east-1, Mayo 2025)
+```
+SDK.init()     → 1 HTTP request al servidor
+SDK.getFlag()  → lectura local, 0 HTTP
+SDK.refresh()  → 1 HTTP request (condicional, 304 si nada cambió)
+```
 
-### Escenario 1 — MVP / arranque (1 instancia, sin Redis)
+Opcionalmente se puede activar `autoRefresh` para background refresh, pero no es el default.
 
-| Servicio | Configuración | Costo/mes |
-|---|---|---|
-| ECS Fargate | 1 tarea × 0.25 vCPU × 0.5 GB, 24/7 | ~$9 |
-| RDS PostgreSQL | db.t4g.micro, Single-AZ, 20 GB gp3 | ~$15 |
-| ALB | 1 ALB, tráfico bajo (<1 LCU) | ~$18 |
-| Route 53 | 1 hosted zone + queries | ~$1 |
-| ACM | Certificado SSL | $0 |
-| ECR | Almacenamiento de imágenes Docker | ~$1 |
-| **Total** | | **~$44/mes** |
+### Billing
 
-Con 2 clientes en plan Studio ($49/mes cada uno) = $98/mes de ingresos. Margen positivo desde el primer cliente.
+Tres planes con lógica diferenciada:
 
-### Escenario 2 — Crecimiento (2 instancias + Redis)
+- **Starter / Studio**: precio fijo, sin medidores de evaluaciones. El `UsageCounterService` cuenta evaluaciones pero el `BillingService` ignora el overage para estos planes.
+- **Scale**: precio base + overage por evaluaciones y storage sobre el límite.
 
-| Servicio | Configuración | Costo/mes |
-|---|---|---|
-| ECS Fargate | 2 tareas × 0.5 vCPU × 1 GB | ~$35 |
-| RDS PostgreSQL | db.t4g.small, Multi-AZ, 50 GB | ~$60 |
-| ElastiCache Redis | cache.t4g.micro | ~$12 |
-| ALB | tráfico moderado | ~$20 |
-| Route 53 | | ~$1 |
-| CloudWatch Logs | | ~$5 |
-| **Total** | | **~$133/mes** |
-
-Con 3 clientes Studio + 1 Scale = $147 + $99 = $246/mes. Margen positivo.
-
-### Escenario 3 — Escala (múltiples instancias + delivery Go)
-
-| Servicio | Configuración | Costo/mes |
-|---|---|---|
-| ECS Fargate (api) | 2 tareas × 1 vCPU × 2 GB | ~$120 |
-| ECS Fargate (delivery Go) | 3 tareas × 0.5 vCPU × 1 GB | ~$80 |
-| RDS PostgreSQL | db.t4g.medium, Multi-AZ | ~$120 |
-| ElastiCache Redis | cache.t4g.small | ~$25 |
-| ALB | tráfico alto | ~$30 |
-| CloudFront + S3 | assets | ~$15 |
-| CloudWatch | logs + métricas | ~$15 |
-| **Total** | | **~$405/mes** |
-
-En este punto necesitas ~9 clientes Scale para cubrir infra. Con 10+ clientes es un negocio viable.
+Los planes se definen en código (`billing.seed.ts`) con upsert al arrancar. Cambios de precios/límites se versionan en git.
 
 ---
 
-## El tema del cache y si tiene sentido cobrar
+## Componentes de infraestructura
 
-Esta es la pregunta más interesante del documento.
+### Requeridos
 
-**El cache de Flux tiene dos capas:**
+| Componente                   | Propósito                       | Notas                                   |
+| ---------------------------- | ------------------------------- | --------------------------------------- |
+| **Contenedor de aplicación** | Corre el proceso NestJS         | 0.5-1 vCPU, 512MB-1GB RAM               |
+| **PostgreSQL**               | Persistencia de todos los datos | Single instance suficiente para empezar |
+| **SSL/TLS termination**      | HTTPS para ambas APIs           | Certificado gestionado o Let's Encrypt  |
+| **DNS**                      | Resolución de dominio           | `api.flux.tudominio.com`                |
+| **CDN / static hosting**     | Sirve el frontend Angular       | Build estático, cacheable               |
 
-1. **Cache en el servidor** (FlagCacheService): flags en memoria, invalidación por eventos. Costo: 0 extra, ya está en la RAM del contenedor.
+### Opcionales (por escala)
 
-2. **Cache en el cliente** (SDK): la SDK mantiene los flags localmente y solo hace polling cada N segundos (según el plan). Esto reduce drásticamente las evaluaciones reales que llegan al servidor.
-
-**¿Tiene sentido cobrar por evaluaciones entonces?**
-
-Sí, pero con matices:
-
-- Una "evaluación" en Flux no es necesariamente un request HTTP. La SDK evalúa flags localmente miles de veces por segundo sin tocar el servidor. Lo que cuenta para billing es el **polling** — cuántas veces la SDK refresca su cache desde el servidor.
-- Con polling cada 60s (Starter), un cliente con 1000 usuarios activos genera ~1440 requests/día al servidor. Con polling cada 5s (Scale), son ~17,280 requests/día.
-- El costo real de esos requests para ti es casi cero — el endpoint es O(1) desde cache en memoria, p95 de 7ms, 25k req/s de capacidad.
-
-**La conclusión honesta:** cobrar por evaluaciones en Flux es más una señal de valor que un reflejo del costo real de infraestructura. El costo marginal de una evaluación adicional es prácticamente cero. Lo que sí tiene costo real es:
-- **SSE**: conexiones persistentes consumen memoria y file descriptors en el servidor
-- **Storage de assets**: S3 y CloudFront tienen costo directo
-- **Número de proyectos/ambientes**: más datos en DB, más cache en memoria
-
-Por eso el modelo Starter/Studio sin medidores de evaluaciones es honesto — el costo real no está ahí.
+| Componente         | Cuándo                  | Propósito                                                |
+| ------------------ | ----------------------- | -------------------------------------------------------- |
+| **Load balancer**  | 2+ instancias de la API | Distribución de tráfico, health checks                   |
+| **Redis**          | 2+ instancias           | Sincronización de invalidación de cache entre instancias |
+| **Object storage** | Módulo de assets        | Archivos subidos por tenants (imágenes, configs)         |
+| **Monitoring**     | Producción              | Métricas, alertas, logs centralizados                    |
 
 ---
 
-## Ventajas de esta arquitectura
+## Deployment
 
-- **Separación limpia de superficies**: el ALB puede enrutar `/sdk/*` a un servicio Go independiente sin tocar los clientes. El contrato público no cambia.
-- **Escala horizontal simple**: agregar instancias de Fargate es un cambio de número en el task definition. El cache se sincroniza via Redis.
-- **Sin vendor lock-in en la lógica**: NestJS y Go corren en cualquier contenedor. Si mañana quieres migrar a GCP o a un VPS, el código no cambia.
-- **Costos predecibles**: Fargate + RDS tienen precios fijos por hora. No hay sorpresas de factura por picos de tráfico moderados.
+### Variables de entorno
 
-## Desventajas y riesgos
+```env
+# Base de datos
+DATABASE_URL=postgresql://user:password@host:5432/flux
 
-- **ALB es caro para tráfico bajo**: $18/mes fijos aunque no haya un solo request. Para el escenario de 2-4 clientes, un NLB o directamente exponer el contenedor via IP pública (con Nginx) es más barato.
-- **RDS Multi-AZ duplica el costo**: necesario para producción real, pero para empezar Single-AZ con backups automáticos es suficiente.
-- **Fargate es más caro que EC2 a escala**: a partir de ~10 instancias constantes, EC2 con Reserved Instances es significativamente más barato. Pero para empezar, Fargate elimina toda la gestión operativa.
-- **SSE y Fargate**: las conexiones SSE son persistentes. Si tienes 500 clientes conectados via SSE y el contenedor se reinicia (deploy, crash), todos reconectan al mismo tiempo. Necesitas graceful shutdown y un timeout de reconexión en la SDK.
+# JWT (RS256)
+JWT_PRIVATE_KEY="-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----\n"
+JWT_PUBLIC_KEY="-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----\n"
+
+# App
+PORT=3000
+NODE_ENV=production
+```
+
+### Build y ejecución
+
+```bash
+pnpm install --frozen-lockfile
+pnpm build
+pnpm db:migrate
+node dist/main.js
+```
+
+Al arrancar:
+
+1. Conecta a PostgreSQL
+2. Ejecuta el seed de planes (upsert)
+3. Expone la API en el puerto configurado
+4. El flag cache se carga lazy al primer request SDK
+
+### Health check
+
+```
+GET /health → 200 OK
+```
+
+Usar para readiness probes del orquestador.
 
 ---
 
 ## Ruta de evolución
 
 ```
-Hoy (MVP)
-  └── 1 Fargate task (NestJS, todo)
-  └── RDS t4g.micro Single-AZ
-  └── Sin Redis (cache en memoria, 1 instancia)
-  └── ALB o directamente via IP
-  └── Costo: ~$44/mes
-
-Fase 2 (5-10 clientes)
-  └── 2 Fargate tasks (NestJS)
-  └── RDS t4g.small Multi-AZ
-  └── ElastiCache t4g.micro (Redis pub/sub)
-  └── ALB con health checks
-  └── Costo: ~$133/mes
-
-Fase 3 (20+ clientes, delivery Go)
-  └── flux-api: 2 tasks NestJS (Dashboard API)
-  └── flux-delivery: 3 tasks Go (SDK API)
-  └── RDS t4g.medium Multi-AZ
-  └── ElastiCache t4g.small
-  └── CloudFront + S3 (assets)
-  └── Costo: ~$405/mes
-
-Fase 4 (escala real)
-  └── Auto Scaling en ECS
-  └── Aurora PostgreSQL (read replicas)
-  └── ElastiCache cluster mode
-  └── WAF + Shield (DDoS)
-  └── Costo: variable, pero ingresos justifican
-```
-
----
-
-## Recomendación para arrancar
-
-**No uses AWS todavía.** Las opciones más inteligentes para el estado actual de Flux:
-
-### Opción A — Railway (recomendada para arrancar)
-
-Railway cobra por uso real. El plan Hobby cuesta $5/mes y ese valor se aplica directamente al consumo de recursos.
-
-```
-Flux en Railway:
-  ├── flux-api (NestJS)     ~$5-8/mes  (0.5 vCPU, 512MB)
-  ├── PostgreSQL            ~$5-7/mes  (shared, 1GB)
-  └── Redis (opcional)      ~$3/mes
-  ─────────────────────────────────────
-  Total:                    ~$13-18/mes
-```
-
-**Ventajas:** deploy desde GitHub en minutos, variables de entorno en UI, logs en tiempo real, sin gestión de infraestructura.
-**Desventaja:** si el negocio crece mucho, el costo por recurso es más alto que AWS. Pero ese es un buen problema.
-
-### Opción B — Render
-
-Más predecible en precio. Servicios con precio fijo mensual.
-
-```
-Flux en Render:
-  ├── flux-api (Starter)    $7/mes
-  ├── PostgreSQL (Starter)  $7/mes  (1GB storage)
-  └── Redis (Key Value)     $3/mes
-  ─────────────────────────────────────
-  Total:                    ~$17/mes
-```
-
-**Ventaja:** precios fijos, sin sorpresas.
-**Desventaja:** el tier Starter hace spin-down después de inactividad (el servicio "duerme"). Para producción necesitas el tier $25/mes que no duerme.
-
-### Opción C — Fly.io
-
-Más control, multi-región cuando lo necesites, Postgres gestionado.
-
-```
-Flux en Fly.io:
-  ├── flux-api (shared-cpu-1x, 256MB)  ~$3-5/mes
-  ├── Managed Postgres (Starter)       ~$29/mes
-  └── Redis (Upstash via Fly)          ~$0-5/mes
-  ─────────────────────────────────────
-  Total:                               ~$32-39/mes
-```
-
-**Ventaja:** el mejor camino hacia multi-región cuando el delivery Go necesite estar cerca del cliente.
-**Desventaja:** Postgres gestionado es caro en el tier inicial.
-
-### Opción D — Hetzner VPS (máximo ahorro, más trabajo)
-
-Un VPS CX22 en Hetzner cuesta ~€3.79/mes (~$4). Tú gestionas Docker, Nginx, backups y actualizaciones.
-
-```
-Flux en Hetzner CX22:
-  ├── VPS (2 vCPU, 4GB RAM)   ~$4/mes
-  ├── Postgres (en el VPS)    $0 extra
-  ├── Redis (en el VPS)       $0 extra
-  └── Backups automáticos     ~$1/mes
-  ─────────────────────────────────────
-  Total:                      ~$5/mes
-```
-
-**Ventaja:** el más barato con diferencia. Para 2-4 clientes, un CX22 tiene recursos de sobra.
-**Desventaja:** tú eres el ops. Actualizaciones, SSL, monitoreo, backups — todo manual o con scripts propios. No recomendado si no quieres dedicar tiempo a infraestructura.
-
-### Cloudflare — qué sirve y qué no
-
-**Cloudflare Pages:** excelente para el frontend Angular. Deploy gratis, CDN global, SSL automático. Úsalo.
-
-**Cloudflare Workers:** **no sirve para el API NestJS**. Workers es serverless con límites de CPU por request, sin estado persistente entre invocaciones, y sin soporte real para conexiones SSE largas. NestJS no corre bien ahí.
-
-**Cloudflare Workers (futuro delivery Go):** cuando extraigas el módulo de delivery a Go, Workers sí es una opción interesante para el endpoint `/sdk/flags` — es stateless, latencia ultra-baja, edge global. Pero eso es fase 3.
-
-### Decisión recomendada
-
-```
-Ahora (MVP, 0-4 clientes):
-  API + DB → Railway (~$15-20/mes)
-  Frontend → Cloudflare Pages ($0)
-  Total: ~$15-20/mes
+Fase 1 (actual):
+  1 instancia (NestJS, todo en un proceso)
+  PostgreSQL (single instance)
+  Cache en memoria del proceso
+  Frontend en CDN
 
 Fase 2 (5-15 clientes):
-  API + DB → Fly.io (~$35-50/mes)
-  Frontend → Cloudflare Pages ($0)
-  Total: ~$35-50/mes
+  2 instancias con load balancer
+  PostgreSQL con backups automáticos
+  Redis para invalidación de cache cruzada
+  Monitoring básico
 
-Fase 3 (15+ clientes, delivery Go):
-  API → Fly.io o AWS ECS
-  Delivery Go → Cloudflare Workers o Fly.io edge
-  DB → Fly.io Postgres o RDS
-  Total: variable según escala
+Fase 3 (15+ clientes):
+  flux-api: N instancias (Dashboard API)
+  flux-delivery: servicio Go separado (SDK API)
+  PostgreSQL con read replicas
+  Redis cluster
+  Object storage para assets
+  WAF / rate limiting
 ```
 
-Migra a AWS cuando un cliente te exija compliance específico (SOC2, HIPAA) o cuando el costo de Railway/Fly.io supere lo que AWS te daría con Reserved Instances. La arquitectura de Flux está diseñada para que esa migración sea transparente.
+La transición de Fase 1 a 2 no requiere cambios de código — solo agregar Redis y una segunda instancia. La transición a Fase 3 requiere extraer el módulo `delivery` a Go, pero el contrato público (`/sdk/flags`) no cambia.
 
 ---
 
-## Variables de entorno adicionales para producción
+## Costos estimados por proveedor
 
-```env
-# AWS
-AWS_REGION=us-east-1
+### Railway (recomendado para Fase 1)
 
-# Redis (Escenario 2+)
-REDIS_URL=redis://flux-redis.xxxxx.cache.amazonaws.com:6379
-
-# Assets (Escenario 3+)
-S3_BUCKET=flux-assets-prod
-S3_REGION=us-east-1
-CLOUDFRONT_DOMAIN=assets.flux.tudominio.com
-
-# Observabilidad
-LOG_LEVEL=info
 ```
+API (0.5 vCPU, 512MB)     ~$5-8/mes
+PostgreSQL (1GB storage)   ~$5-7/mes
+────────────────────────────────────
+Total:                     ~$10-15/mes
+```
+
+### Render
+
+```
+API (Starter plan)         $7/mes
+PostgreSQL (Starter)       $7/mes
+────────────────────────────────────
+Total:                     ~$14/mes (nota: Starter hace spin-down)
+API (Standard, no sleep)   $25/mes → total ~$32/mes
+```
+
+### Fly.io
+
+```
+API (shared-cpu-1x)        ~$3-5/mes
+Managed Postgres (Starter) ~$29/mes
+────────────────────────────────────
+Total:                     ~$32-34/mes
+```
+
+### Hetzner VPS (self-managed)
+
+```
+CX22 (2 vCPU, 4GB RAM)    ~$4/mes
+PostgreSQL en el VPS       $0 extra
+Backups automáticos        ~$1/mes
+────────────────────────────────────
+Total:                     ~$5/mes (tú gestionas Docker, SSL, backups)
+```
+
+### Frontend
+
+Cloudflare Pages — gratis, CDN global, deploy desde git. Recomendado independientemente del proveedor del backend.
 
 ---
 
-*Precios referenciados de AWS us-east-1, Mayo 2025. Sujetos a cambio. Verificar en [aws.amazon.com/pricing](https://aws.amazon.com/pricing) antes de presupuestar.*
+## Decisiones técnicas documentadas
+
+| Decisión                        | Razón                                                                                       |
+| ------------------------------- | ------------------------------------------------------------------------------------------- |
+| Shared DB multi-tenant          | Simplicidad operativa, un solo backup, un solo schema. Suficiente hasta cientos de tenants. |
+| Permisos en JWT, no en DB       | Evaluación O(1) sin I/O. Los roles son fijos y conocidos.                                   |
+| Cache en memoria, no Redis      | Con 1 instancia, Redis agrega latencia sin beneficio. Map es más rápido.                    |
+| EventEmitter2 para invalidación | Desacopla FlagsService de FlagCacheService sin infraestructura extra.                       |
+| ETag en delivery                | Reduce transferencia de datos al mínimo. 304 sin body cuando nada cambió.                   |
+| bcrypt L1 cache por rawKey      | bcrypt solo ocurre una vez por key en el lifetime del servidor.                             |
+| Audit log con SET NULL en FK    | Inmutable — no se pierde historial si se borra un tenant o usuario.                         |
+| Plans en código con upsert      | Versionados en git, sin UI de gestión, cambios trazables.                                   |
+| On-demand SDK (sin polling)     | Menos carga en servidor, más control para el developer.                                     |

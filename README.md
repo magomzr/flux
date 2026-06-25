@@ -14,11 +14,11 @@ It was built first as an internal tool — used in production on our own project
 
 ## Who it's for
 
-| User | How they use Flux |
-|---|---|
-| **Internal (Starter)** | Managing flags across your own products and client projects |
+| User                             | How they use Flux                                             |
+| -------------------------------- | ------------------------------------------------------------- |
+| **Internal (Starter)**           | Managing flags across your own products and client projects   |
 | **Development clients (Studio)** | Controlling their app's features without calling the dev team |
-| **External companies (Scale)** | Using Flux as a standalone feature flagging service |
+| **External companies (Scale)**   | Using Flux as a standalone feature flagging service           |
 
 ---
 
@@ -39,20 +39,21 @@ The SDK (`@flux/js`, `@flux/angular`) lives in separate repositories — it's a 
 
 ## Stack
 
-| Layer | Technology |
-|---|---|
-| Backend | NestJS + TypeScript |
-| Database | PostgreSQL (Drizzle ORM) |
-| Auth | JWT RS256 + bcrypt |
-| Frontend | Angular 21 (standalone, signals) |
-| Styles | Tailwind CSS v4 |
-| Load testing | k6 |
+| Layer        | Technology                       |
+| ------------ | -------------------------------- |
+| Backend      | NestJS + TypeScript              |
+| Database     | PostgreSQL (Drizzle ORM)         |
+| Auth         | JWT RS256 + bcrypt               |
+| Frontend     | Angular 21 (standalone, signals) |
+| Styles       | Tailwind CSS v4                  |
+| Load testing | k6                               |
 
 ---
 
 ## Current state
 
 **Done:**
+
 - Multi-tenant architecture with ownership enforcement
 - Auth — login, refresh tokens, JWT RS256, family revocation
 - Full CRUD: tenants, projects, environments, flags, flag values
@@ -65,6 +66,7 @@ The SDK (`@flux/js`, `@flux/angular`) lives in separate repositories — it's a 
 - k6 load test: p95 = 7ms under 200 VU spike, 25k req/s
 
 **In progress / next:**
+
 - Podman compose for local development
 - User management per tenant (CRUD from dashboard)
 - Auto-create `tenant_admin` when creating a tenant
@@ -123,8 +125,37 @@ cd api
 cp .env.example .env   # fill in DATABASE_URL and JWT keys
 pnpm install
 pnpm db:migrate
+pnpm seed:admin        # creates super_admin (first time only)
 pnpm start:dev
+```
 
+### `pnpm seed:admin`
+
+Creates the initial `super_admin` user. Run once per new database.
+
+```bash
+# Uses ADMIN_EMAIL and ADMIN_PASSWORD from .env:
+pnpm seed:admin
+
+# Or pass explicitly:
+ADMIN_EMAIL=mario@flux.com ADMIN_PASSWORD=secret123 pnpm seed:admin
+```
+
+**Protections:**
+
+- If a `super_admin` already exists → does nothing, logs "already exists"
+- Never updates an existing user — insert only
+- Password comes from env vars, never hardcoded in source
+- Fails if email is already taken by another user
+
+**When to run:**
+
+- First time setting up a new database
+- After migrating to a new database URL
+- After resetting a development environment
+- Never needed when creating tenants (that's automatic via the dashboard)
+
+```bash
 # Frontend
 cd web
 pnpm install

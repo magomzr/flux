@@ -1,92 +1,63 @@
 # flux-backend — TODO
 
-## ✅ Hecho
+## ✅ Completado
 
-### Arquitectura y decisiones
-- [x] Arquitectura general (monolito modular → microservicios)
-- [x] Dos superficies: Dashboard API y SDK API
-- [x] Modelo multi-tenant con una sola DB
-- [x] Estrategia de extracción del módulo `delivery` a Go en el futuro
-- [x] Roles y permisos definidos en código (`roles.config.ts`)
-- [x] Schema de DB completo en Drizzle (`schema.ts`)
-- [x] Estrategia de planes definida (ver abajo)
+### Core
 
-### Modelo de negocio — planes
+- [x] Arquitectura monolito modular (Dashboard API + SDK API)
+- [x] Multi-tenant con ownership check centralizado (`TenantGuard`)
+- [x] Auth: JWT RS256, refresh tokens con revocación por familia, change password
+- [x] Módulos: tenants, projects, environments, flags, flag-values, sdk-keys, billing, delivery, audit, users
+- [x] Billing: planes (Starter/Studio/Scale), suscripciones, usage forecast, seed con upsert
+- [x] Delivery: cache en memoria L1/L2, ETag, conditional GET, SSE, usage counter
+- [x] Audit: log inmutable con userEmail, consulta por filtros, JSON metadata
+- [x] Users: CRUD por tenant, reset password, auto-create admin al crear tenant
+- [x] Guards: JWT, Permissions, Tenant ownership, SDK API Key
+- [x] Swagger/OpenAPI en `/docs`
+- [x] GitHub Actions workflow para tests
+- [x] Unit tests: 105 tests, 10 suites, todos los módulos cubiertos
+- [x] k6 load test: p95=7ms, 25k req/s bajo spike de 200 VUs
+- [x] Modelo on-demand (sin polling por defecto) — documentado en README
+- [x] Seed de `super_admin` — `pnpm seed:admin`, lee credenciales de env vars, idempotente
 
-Flux sirve tres escenarios distintos con lógicas de precio diferentes:
+### Decisiones de diseño
 
-| Plan | Escenario | Precio | Overage |
-|---|---|---|---|
-| **Starter** | Uso interno / proyectos propios | $0 | No |
-| **Studio** | Clientes de desarrollo a medida | $49/mo fijo | No — precio fijo, sin medidores |
-| **Scale** | Empresas externas que contratan Flux directamente | $99/mo base | Sí — evaluaciones y storage |
-
-- **Starter**: 1 proyecto, 3 ambientes, 50 flags, sin SSE, polling 60s.
-- **Studio**: proyectos ilimitados, 10 ambientes, 500 flags, SSE incluido, polling 10s. Sin medidores de evaluaciones — el costo de delivery se absorbe en el margen del contrato de desarrollo.
-- **Scale**: todo ilimitado, SSE, polling 5s. Con medidores de evaluaciones y storage para clientes que no tienen otra relación comercial con Flux.
-
-### Infraestructura
-- [x] Postgres 17 corriendo en Podman
-- [x] Drizzle configurado con scripts `db:generate`, `db:migrate`, `db:studio`
-- [x] Migration inicial aplicada
-- [x] `.env` configurado con llaves RS256 y DATABASE_URL
-
-### Módulos
-- [x] `auth` — login, refresh, logout, RS256, revocación de refresh tokens por familia
-- [x] `users` — validación de credenciales, resolución de permisos desde código
-- [x] `tenants` — CRUD completo, deactivate (soft), removePermanently (hard), audit
-- [x] `projects` — CRUD, relación con tenant, TenantGuard, audit
-- [x] `environments` — CRUD, color, isDefault, TenantGuard, audit
-- [x] `sdk-api-keys` — generación, hash bcrypt, revocación, invalidación de cache
-- [x] `flags` — CRUD, tipos (boolean/string/number/json), valores por ambiente, audit
-- [x] `flag-values` — enabled, value, publishedAt/publishedBy, audit
-- [x] `billing` — planes, suscripciones, uso mensual, forecast de costo, calculadora
-- [x] `delivery` — cache en memoria L1/L2, ETag, REST polling, SSE, usage counter
-- [x] `audit` — log inmutable, consulta por tenant/entidad/usuario
-
-### Guards y decorators
-- [x] `JwtAuthGuard` — verificación de JWT RS256
-- [x] `PermissionsGuard` — verificación de permisos desde el JWT
-- [x] `TenantGuard` + `@TenantResource` — ownership check centralizado
-- [x] `SdkApiKeyGuard` — autenticación por API key de ambiente
-- [x] `@RequirePerms`, `@CurrentUser`, `@Public` decorators
-
-### Performance
-- [x] Cache de flags en memoria con invalidación por eventos (EventEmitter2)
-- [x] Cache de API keys L1 (rawKey verificada) + L2 (por prefix)
-- [x] ETag + conditional GET (304) para polling eficiente
-- [x] Usage counter con batching en memoria (flush cada 30s)
-- [x] k6 load test: p95=7ms bajo spike de 200 VUs, 25k req/s
+- [x] Planes definidos en código con upsert al arrancar (no UI de gestión)
+- [x] `pollIntervalSeconds` eliminado — SDK usa on-demand + refresh manual
+- [x] Overage solo aplica al plan Scale (Starter/Studio son flat rate)
+- [x] Audit log guarda `userEmail` como snapshot inmutable
 
 ---
 
 ## 🔲 Pendiente
 
-### MVP — prioritario
-- [x] DTO y validación para login con `class-validator`
-- [x] Endpoint `POST /auth/logout` — verificar end-to-end
-- [x] Swagger/OpenAPI para Dashboard API (`/docs`)
-- [x] `.env.example` actualizado con todas las variables actuales
-- [ ] Seed script reproducible para `super_admin` (en lugar de INSERT manual)
-- [ ] Dockerfile + docker-compose/podman-compose para desarrollo local
-- [x] `POST /tenants` — al crear un tenant, crear automáticamente un usuario `tenant_admin` con email y password definidos por el `super_admin` en el mismo request. Devolver las credenciales en la respuesta (solo una vez).
-- [x] `GET/POST/PATCH/DELETE /tenants/:tenantId/users` — CRUD de usuarios por tenant
+### Próximo — alto valor, bajo esfuerzo
 
-### Post-MVP
-- [ ] `assets` — upload, storage en R2/S3, URLs firmadas
-- [ ] Redis para invalidación de cache entre múltiples instancias
-- [ ] Cleanup periódico de refresh tokens expirados (cron job)
-- [x] **Unit tests del API** — cobertura completa (105 tests, 10 suites, ~2.4s)
-  - [x] `auth` — login, refresh, logout, revocación de familia, changePassword (11 tests)
-  - [x] `billing` — planes, suscripciones, forecast, overage solo en Scale (17 tests)
-  - [x] `users` — CRUD, validación de credenciales, permisos por rol, hashing (19 tests)
-  - [x] `flags` — CRUD, flag_values automáticos, cache invalidation, publish (11 tests)
-  - [x] `tenants` — CRUD, creación con admin automático, slug único (8 tests)
-  - [x] `projects` — CRUD, deactivate, delete con audit (7 tests)
-  - [x] `environments` — CRUD, lógica de isDefault, clearDefault (8 tests)
-  - [x] `audit` — escritura inmutable, serialización JSON, never throws, query con filtros (8 tests)
-  - [x] `delivery/flag-cache` — lazy load, cache hit, invalidación por evento, ETag determinístico (11 tests)
-  - [x] Guards — `TenantGuard` (8 tests), `PermissionsGuard` (4 tests)
-- [ ] Tests del módulo `auth` (login, refresh, revocación)
-- [ ] Tests del módulo `tenants`
-- [ ] Actualizar README con estado actual del proyecto
+- [ ] **`expiresAt` en flags** — fecha límite para retirar la flag del código. Evita flags zombie.
+- [ ] **`owner` en flags** — email del responsable actual. Clarifica quién debe actuar.
+- [ ] **Convención de nombrado con `.`** — actualizar regex del DTO de `key` para aceptar puntos (`checkout.new_flow.frontend`). Documentar en README del SDK.
+- [ ] **Ejemplos de testing en SDK docs** — patrón de mock con `inject(FluxClient)` para tests unitarios y e2e.
+- [ ] **Podman compose** — levantar Postgres + API con un solo comando.
+
+### Próximo — alto valor, más esfuerzo
+
+- [ ] **Sticky assignment en SDK** — hash determinístico de `userId + flagKey` para rollout porcentual consistente. Reactivar `rolloutPct` en el DTO del frontend.
+- [ ] **Flag lifecycle states** — `active`, `completed`, `archived`, `expired`. Permite gestionar el ciclo de vida de una flag desde el dashboard.
+- [ ] **Metadata key-value en flags** — links a tickets, notas de contexto, referencias a experimentos. Campo flexible tipo `Record<string, string>`.
+- [ ] **Cleanup periódico de refresh tokens** — cron job para eliminar tokens expirados.
+
+### Roadmap
+
+- [ ] **`assets`** — upload, storage en R2/S3, URLs firmadas
+- [ ] **Redis** — invalidación de cache entre múltiples instancias (necesario con 2+ instancias)
+- [ ] **Transición anónimo→conectado** — `visitorId` como cookie, asociación al `userId` en login
+- [ ] **Integración con analytics** — feedback loop: flag activa → impacto en métricas → decisión informada
+- [ ] **SDK `@flux/angular`** — wrapper con signals reactivos, `toSignal()` del cache
+
+---
+
+## Referencia
+
+- [RESEARCH.md](../RESEARCH.md) — best practices de feature flagging
+- [BUSINESS.md](../BUSINESS.md) — modelo comercial y posicionamiento
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — infraestructura, costos, deployment
