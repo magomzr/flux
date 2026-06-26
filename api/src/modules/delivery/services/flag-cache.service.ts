@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, isNotNull } from 'drizzle-orm';
 import { createHash } from 'crypto';
 import { flagValues, flags } from '../../../db/schema';
 import type { Db } from '../../../db';
@@ -71,7 +71,9 @@ export class FlagCacheService {
   handleFlagChanged(event: FlagChangedEvent): void {
     if (this.cache.has(event.environmentId)) {
       this.cache.delete(event.environmentId);
-      this.logger.debug(`Cache invalidated for environment ${event.environmentId}`);
+      this.logger.debug(
+        `Cache invalidated for environment ${event.environmentId}`,
+      );
     }
   }
 
@@ -103,7 +105,12 @@ export class FlagCacheService {
       })
       .from(flagValues)
       .innerJoin(flags, eq(flagValues.flagId, flags.id))
-      .where(eq(flagValues.environmentId, environmentId));
+      .where(
+        and(
+          eq(flagValues.environmentId, environmentId),
+          isNotNull(flagValues.publishedAt),
+        ),
+      );
 
     const flagMap = new Map<string, CachedFlagEntry>();
     for (const row of rows) {

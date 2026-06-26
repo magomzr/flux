@@ -33,6 +33,7 @@
 
 ### Próximo — alto valor, bajo esfuerzo
 
+- [x] **Publish como gate del SDK** — el endpoint `/sdk/flags` solo retorna flags cuyo `publishedAt` no es null. Le da peso real al workflow de publish: una flag no-publicada en un ambiente no existe para el SDK.
 - [ ] **`expiresAt` en flags** — fecha límite para retirar la flag del código. Evita flags zombie.
 - [ ] **`owner` en flags** — email del responsable actual. Clarifica quién debe actuar.
 - [ ] **Convención de nombrado con `.`** — actualizar regex del DTO de `key` para aceptar puntos (`checkout.new_flow.frontend`). Documentar en README del SDK.

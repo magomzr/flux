@@ -1,85 +1,89 @@
-import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/auth/auth.guard';
+import { Routes } from "@angular/router";
+import { authGuard, guestGuard } from "./core/auth/auth.guard";
 
 export const routes: Routes = [
   {
-    path: 'login',
+    path: "login",
     canActivate: [guestGuard],
-    loadComponent: () =>
-      import('./features/login/login').then((m) => m.Login),
+    loadComponent: () => import("./features/login/login").then((m) => m.Login),
   },
   {
-    path: '',
+    path: "",
     canActivate: [authGuard],
-    loadComponent: () =>
-      import('./features/shell/shell').then((m) => m.Shell),
+    loadComponent: () => import("./features/shell/shell").then((m) => m.Shell),
     children: [
       {
-        path: '',
-        pathMatch: 'full',
-        redirectTo: 'projects',
+        path: "",
+        pathMatch: "full",
+        redirectTo: "projects",
       },
       {
-        path: 'projects',
+        path: "projects",
         loadComponent: () =>
-          import('./features/projects/project-list').then((m) => m.ProjectList),
+          import("./features/projects/project-list").then((m) => m.ProjectList),
       },
       {
-        path: 'projects/:projectId',
+        path: "projects/:projectId",
         loadComponent: () =>
-          import('./features/projects/project-detail').then((m) => m.ProjectDetail),
+          import("./features/projects/project-detail").then(
+            (m) => m.ProjectDetail,
+          ),
         children: [
           {
-            path: '',
-            pathMatch: 'full',
-            redirectTo: 'flags',
+            path: "",
+            pathMatch: "full",
+            redirectTo: "environments",
           },
           {
-            path: 'flags',
+            path: "flags",
             loadComponent: () =>
-              import('./features/flags/flag-list').then((m) => m.FlagList),
+              import("./features/flags/flag-list").then((m) => m.FlagList),
           },
           {
-            path: 'environments',
+            path: "environments",
             loadComponent: () =>
-              import('./features/environments/environment-list').then((m) => m.EnvironmentList),
+              import("./features/environments/environment-list").then(
+                (m) => m.EnvironmentList,
+              ),
           },
           {
-            path: 'sdk-keys',
+            path: "sdk-keys",
             loadComponent: () =>
-              import('./features/sdk-keys/sdk-key-list').then((m) => m.SdkKeyList),
+              import("./features/sdk-keys/sdk-key-list").then(
+                (m) => m.SdkKeyList,
+              ),
           },
         ],
       },
       {
-        path: 'billing',
+        path: "billing",
         loadComponent: () =>
-          import('./features/billing/billing').then((m) => m.Billing),
+          import("./features/billing/billing").then((m) => m.Billing),
       },
       {
-        path: 'audit',
+        path: "audit",
         loadComponent: () =>
-          import('./features/audit/audit-log').then((m) => m.AuditLog),
+          import("./features/audit/audit-log").then((m) => m.AuditLog),
       },
       {
-        path: 'users',
+        path: "users",
         loadComponent: () =>
-          import('./features/users/user-list').then((m) => m.UserList),
+          import("./features/users/user-list").then((m) => m.UserList),
       },
       {
-        path: 'tenants',
+        path: "tenants",
         loadComponent: () =>
-          import('./features/tenants/tenant-list').then((m) => m.TenantList),
+          import("./features/tenants/tenant-list").then((m) => m.TenantList),
       },
       {
-        path: 'tenants/:tenantId/users',
+        path: "tenants/:tenantId/users",
         loadComponent: () =>
-          import('./features/tenants/tenant-users').then((m) => m.TenantUsers),
+          import("./features/tenants/tenant-users").then((m) => m.TenantUsers),
       },
     ],
   },
   {
-    path: '**',
-    redirectTo: '',
+    path: "**",
+    redirectTo: "",
   },
 ];
