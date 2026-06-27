@@ -2,8 +2,6 @@ import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { BillingService } from '../../../src/modules/billing/services/billing.service';
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
 const mockPlanFree = {
   id: 'starter',
   name: 'Starter',
@@ -49,8 +47,6 @@ const mockSubscription = {
   createdAt: new Date(),
 };
 
-// ─── Mock DB ──────────────────────────────────────────────────────────────────
-
 const mockDb = {
   query: {
     plans: { findFirst: jest.fn(), findMany: jest.fn() },
@@ -65,8 +61,6 @@ const mockDb = {
   }),
 };
 
-// ─── Suite ────────────────────────────────────────────────────────────────────
-
 describe('BillingService', () => {
   let service: BillingService;
 
@@ -78,8 +72,6 @@ describe('BillingService', () => {
     service = module.get(BillingService);
     jest.clearAllMocks();
   });
-
-  // ─── Plans ──────────────────────────────────────────────────────────────────
 
   describe('findPlan', () => {
     it('returns the plan when found', async () => {
@@ -123,8 +115,6 @@ describe('BillingService', () => {
     });
   });
 
-  // ─── Subscriptions ──────────────────────────────────────────────────────────
-
   describe('subscribe', () => {
     it('throws ConflictException when tenant is already on the same plan', async () => {
       mockDb.query.plans.findFirst.mockResolvedValue(mockPlanStudio);
@@ -141,7 +131,7 @@ describe('BillingService', () => {
       mockDb.query.plans.findFirst.mockResolvedValue(mockPlanScale);
       mockDb.query.tenantSubscriptions.findFirst.mockResolvedValue(
         mockSubscription,
-      ); // studio activo
+      );
 
       const newSub = { ...mockSubscription, planId: 'scale' };
       const insertReturning = jest.fn().mockResolvedValue([newSub]);
@@ -155,12 +145,10 @@ describe('BillingService', () => {
 
       const result = await service.subscribe('tenant-1', { planId: 'scale' });
 
-      expect(mockDb.update).toHaveBeenCalled(); // cerró la suscripción anterior
+      expect(mockDb.update).toHaveBeenCalled();
       expect(result.planId).toBe('scale');
     });
   });
-
-  // ─── calculateCost — overage logic ──────────────────────────────────────────
 
   describe('calculateCost', () => {
     beforeEach(() => {
@@ -184,14 +172,12 @@ describe('BillingService', () => {
     });
 
     it('Scale has overage when evaluations exceed the limit', async () => {
-      // Scale limit: 1M evaluations. Sending 2M → 1M overage → $10
       const results = await service.calculateCost({
         evaluationsMonth: 2_000_000,
       });
 
       const scale = results.find((r) => r.planId === 'scale');
       expect(scale?.overageCostUsd).toBeGreaterThan(0);
-      // 1M extra / 1000 * $0.01 = $10
       expect(scale?.overageCostUsd).toBe(10);
     });
 
@@ -202,11 +188,10 @@ describe('BillingService', () => {
 
       const scale = results.find((r) => r.planId === 'scale');
       expect(scale?.overageCostUsd).toBe(0);
-      expect(scale?.totalCostUsd).toBe(99); // solo base
+      expect(scale?.totalCostUsd).toBe(99);
     });
 
     it('Scale has storage overage when storage exceeds limit', async () => {
-      // Scale limit: 5000 MB. Sending 6000 MB → 1000 MB overage → $20
       const results = await service.calculateCost({ assetStorageMb: 6000 });
 
       const scale = results.find((r) => r.planId === 'scale');
@@ -215,13 +200,13 @@ describe('BillingService', () => {
 
     it('Scale accumulates both evaluation and storage overage', async () => {
       const results = await service.calculateCost({
-        evaluationsMonth: 2_000_000, // +$10
-        assetStorageMb: 6000, // +$20
+        evaluationsMonth: 2_000_000,
+        assetStorageMb: 6000,
       });
 
       const scale = results.find((r) => r.planId === 'scale');
       expect(scale?.overageCostUsd).toBe(30);
-      expect(scale?.totalCostUsd).toBe(129); // $99 + $30
+      expect(scale?.totalCostUsd).toBe(129);
     });
 
     it('returns correct base cost for each plan', async () => {
@@ -232,8 +217,6 @@ describe('BillingService', () => {
       expect(results.find((r) => r.planId === 'scale')?.baseCostUsd).toBe(99);
     });
   });
-
-  // ─── getCurrentUsage ─────────────────────────────────────────────────────────
 
   describe('getCurrentUsage', () => {
     it('returns zero actual usage when no usage record exists', async () => {

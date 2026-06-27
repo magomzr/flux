@@ -5,8 +5,6 @@ import { FlagsService } from '../../../src/modules/flags/services/flags.service'
 import { AuditService } from '../../../src/modules/audit/services/audit.service';
 import { FLAG_CHANGED_EVENT } from '../../../src/modules/delivery/delivery.types';
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
 const ctx = { userId: 'user-1', tenantId: 'tenant-1', ip: '127.0.0.1' };
 
 const mockFlag = {
@@ -33,8 +31,6 @@ const mockFlagValue = {
   publishedBy: null,
 };
 
-// ─── Mock DB ──────────────────────────────────────────────────────────────────
-
 const mockDb = {
   query: {
     flags: { findFirst: jest.fn(), findMany: jest.fn() },
@@ -48,8 +44,6 @@ const mockDb = {
 
 const mockAudit = { log: jest.fn().mockResolvedValue(undefined) };
 const mockEvents = { emit: jest.fn() };
-
-// ─── Suite ────────────────────────────────────────────────────────────────────
 
 describe('FlagsService', () => {
   let service: FlagsService;
@@ -68,11 +62,9 @@ describe('FlagsService', () => {
     jest.clearAllMocks();
   });
 
-  // ─── create ──────────────────────────────────────────────────────────────────
-
   describe('create', () => {
     it('creates flag and generates flag_values for each environment', async () => {
-      mockDb.query.flags.findFirst.mockResolvedValue(null); // key not taken
+      mockDb.query.flags.findFirst.mockResolvedValue(null);
       mockDb.query.environments.findMany.mockResolvedValue([
         { id: 'env-1' },
         { id: 'env-2' },
@@ -98,7 +90,6 @@ describe('FlagsService', () => {
       );
 
       expect(result.key).toBe('new_checkout');
-      // Se insertaron flag_values para los 3 ambientes
       expect(mockDb.insert).toHaveBeenCalledTimes(2);
       expect(flagValuesMock).toHaveBeenCalledWith(
         expect.arrayContaining([
@@ -127,7 +118,6 @@ describe('FlagsService', () => {
         ctx,
       );
 
-      // Solo se insertó el flag, no flag_values
       expect(mockDb.insert).toHaveBeenCalledTimes(1);
     });
 
@@ -163,8 +153,6 @@ describe('FlagsService', () => {
     });
   });
 
-  // ─── findOne ─────────────────────────────────────────────────────────────────
-
   describe('findOne', () => {
     it('returns flag with flagValues', async () => {
       const flagWithValues = { ...mockFlag, flagValues: [mockFlagValue] };
@@ -182,8 +170,6 @@ describe('FlagsService', () => {
       );
     });
   });
-
-  // ─── updateFlagValue ─────────────────────────────────────────────────────────
 
   describe('updateFlagValue', () => {
     it('updates flag value and emits FLAG_CHANGED_EVENT', async () => {
@@ -217,8 +203,6 @@ describe('FlagsService', () => {
     });
   });
 
-  // ─── publishFlagValue ────────────────────────────────────────────────────────
-
   describe('publishFlagValue', () => {
     it('sets publishedAt and publishedBy, emits event, logs audit', async () => {
       mockDb.query.flagValues.findFirst.mockResolvedValue(mockFlagValue);
@@ -248,8 +232,6 @@ describe('FlagsService', () => {
       );
     });
   });
-
-  // ─── removePermanently ───────────────────────────────────────────────────────
 
   describe('removePermanently', () => {
     it('deletes flag and logs audit', async () => {

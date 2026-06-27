@@ -41,7 +41,6 @@ export class TenantsService {
       })
       .returning();
 
-    // Crear el usuario tenant_admin inicial
     const adminUser = await this.usersService.createTenantAdmin(tenant.id, {
       name: dto.admin.name,
       email: dto.admin.email,
@@ -57,7 +56,6 @@ export class TenantsService {
       metadata: { name: tenant.name, slug: tenant.slug, email: tenant.email },
     });
 
-    // Devolver tenant + credenciales del admin (password solo esta vez)
     return {
       ...tenant,
       admin: {
@@ -65,7 +63,7 @@ export class TenantsService {
         name: adminUser.name,
         email: adminUser.email,
         role: adminUser.role,
-        password: adminUser.password, // texto plano — solo en esta respuesta
+        password: adminUser.password,
       },
     };
   }

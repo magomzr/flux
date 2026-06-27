@@ -27,16 +27,6 @@ export class SdkController implements OnApplicationShutdown {
     private readonly usageCounter: UsageCounterService,
   ) {}
 
-  /**
-   * GET /sdk/flags
-   * Devuelve todos los flags del ambiente autenticado.
-   *
-   * Soporta conditional GET con ETag:
-   *   - Si el cliente envía If-None-Match y el ETag coincide → 304 Not Modified
-   *   - Si cambió → 200 con nuevo payload y ETag
-   *
-   * Hot path: O(1) desde cache en memoria.
-   */
   @Get('flags')
   async getAllFlags(
     @Req() req: Request,
@@ -45,7 +35,6 @@ export class SdkController implements OnApplicationShutdown {
   ) {
     const { environmentId } = getSdkContext(req as any);
 
-    // Conditional GET — si el ETag no cambió, 304 sin body
     if (ifNoneMatch) {
       const currentEtag = await this.flagCache.getEtag(environmentId);
       if (ifNoneMatch === `"${currentEtag}"`) {
@@ -55,25 +44,16 @@ export class SdkController implements OnApplicationShutdown {
 
     const { flags, etag } = await this.flagCache.getAll(environmentId);
 
-    // Incrementar contador de evaluaciones — no bloqueante, O(1)
     this.usageCounter.increment(getSdkContext(req as any).tenantId);
 
     return res
       .set('ETag', `"${etag}"`)
-      .set('Cache-Control', 'no-cache') // el cliente debe revalidar siempre
+      .set('Cache-Control', 'no-cache')
       .json(flags);
   }
 
-  /**
-   * GET /sdk/flags/:key
-   * Devuelve un flag específico por key.
-   * Hot path: O(1) lookup en Map.
-   */
   @Get('flags/:key')
-  async getFlag(
-    @Req() req: Request,
-    @Param('key') key: string,
-  ) {
+  async getFlag(@Req() req: Request, @Param('key') key: string) {
     const { environmentId } = getSdkContext(req as any);
     const flag = await this.flagCache.getOne(environmentId, key);
 
@@ -81,20 +61,11 @@ export class SdkController implements OnApplicationShutdown {
       throw new NotFoundException(`Flag "${key}" not found`);
     }
 
-    // Incrementar contador también en evaluación individual
     this.usageCounter.increment(getSdkContext(req as any).tenantId);
 
     return flag;
   }
 
-  /**
-   * GET /sdk/stream
-   * SSE — notificaciones en tiempo real cuando cambian los flags.
-   * Solo disponible en plan standard+.
-   *
-   * El cliente recibe eventos del tipo "flags.changed" con el environmentId
-   * y opcionalmente el flagKey que cambió.
-   */
   @Get('stream')
   stream(@Req() req: Request, @Res() res: Response) {
     const sdkCtx = getSdkContext(req as any);
@@ -108,27 +79,23 @@ export class SdkController implements OnApplicationShutdown {
     const { environmentId } = sdkCtx;
     const subject = this.sseService.register(environmentId);
 
-    // Headers SSE estándar
     res.set({
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'X-Accel-Buffering': 'no', // desactiva buffering en nginx
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
     });
     res.flushHeaders();
 
-    // Heartbeat cada 30s para mantener la conexión viva
     const heartbeat = setInterval(() => {
       res.write(': heartbeat\n\n');
     }, 30_000);
 
-    // Enviar evento inicial con el estado actual
     this.flagCache.getAll(environmentId).then(({ flags, etag }) => {
       res.write(`event: flags.snapshot\n`);
       res.write(`data: ${JSON.stringify({ flags, etag })}\n\n`);
     });
 
-    // Suscribir al subject y pushear eventos al cliente
     const subscription = subject.subscribe({
       next: (event) => {
         if (event.type) res.write(`event: ${event.type}\n`);
@@ -138,7 +105,6 @@ export class SdkController implements OnApplicationShutdown {
       error: () => res.end(),
     });
 
-    // Limpiar cuando el cliente desconecta
     req.on('close', () => {
       clearInterval(heartbeat);
       subscription.unsubscribe();
@@ -146,8 +112,5 @@ export class SdkController implements OnApplicationShutdown {
     });
   }
 
-  onApplicationShutdown() {
-    // Al apagar el servidor, el SseService completa todos los subjects
-    // via sus propios listeners de shutdown
-  }
+  onApplicationShutdown() {}
 }

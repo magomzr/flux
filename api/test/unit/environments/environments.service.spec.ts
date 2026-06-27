@@ -18,7 +18,7 @@ const mockEnv = {
 const mockDb = {
   query: {
     environments: { findFirst: jest.fn(), findMany: jest.fn() },
-    flags: { findMany: jest.fn().mockResolvedValue([]) }, // para crear flag_values al crear ambiente
+    flags: { findMany: jest.fn().mockResolvedValue([]) },
   },
   insert: jest.fn(),
   update: jest.fn(),
@@ -42,7 +42,6 @@ describe('EnvironmentsService', () => {
     service = module.get(EnvironmentsService);
     jest.clearAllMocks();
 
-    // Restaurar defaults después del clearAllMocks
     mockDb.query.flags.findMany.mockResolvedValue([]);
     mockAudit.log.mockResolvedValue(undefined);
   });
@@ -94,7 +93,6 @@ describe('EnvironmentsService', () => {
         ctx,
       );
 
-      // clearDefault debe haber llamado update para quitar el default anterior
       expect(mockDb.update).toHaveBeenCalled();
     });
 
@@ -150,16 +148,14 @@ describe('EnvironmentsService', () => {
           set: jest.fn().mockReturnValue({ where: clearWhere }),
         })
         .mockReturnValueOnce({
-          set: jest
-            .fn()
-            .mockReturnValue({
-              where: jest.fn().mockReturnValue({ returning: updateReturning }),
-            }),
+          set: jest.fn().mockReturnValue({
+            where: jest.fn().mockReturnValue({ returning: updateReturning }),
+          }),
         });
 
       await service.update('env-1', { isDefault: true }, ctx);
 
-      expect(mockDb.update).toHaveBeenCalledTimes(2); // clearDefault + update
+      expect(mockDb.update).toHaveBeenCalledTimes(2);
     });
   });
 

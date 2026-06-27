@@ -9,31 +9,30 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
   app.enableCors();
 
-  // ─── Swagger ────────────────────────────────────────────────────────────────
-  // Solo disponible fuera de producción
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
       .setTitle('Flux API')
-      .setDescription('Dashboard API para gestión de feature flags multi-tenant')
+      .setDescription(
+        'API dashboard for multi-tenant feature flagging management',
+      )
       .setVersion('0.1.0')
       .addBearerAuth(
         { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
         'JWT',
       )
-      .addApiKey(
-        { type: 'apiKey', in: 'header', name: 'X-Api-Key' },
-        'SDK-Key',
-      )
+      .addApiKey({ type: 'apiKey', in: 'header', name: 'X-Api-Key' }, 'SDK-Key')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
     SwaggerModule.setup('docs', app, document, {
       swaggerOptions: {
-        persistAuthorization: true, // mantiene el token entre recargas
+        persistAuthorization: true,
       },
     });
 
-    console.log(`📖 Swagger disponible en http://localhost:${process.env.PORT ?? 3000}/docs`);
+    console.log(
+      `Swagger available in http://localhost:${process.env.PORT ?? 3000}/docs`,
+    );
   }
 
   await app.listen(process.env.PORT ?? 3000, '0.0.0.0');

@@ -14,8 +14,6 @@ import * as bcrypt from 'bcrypt';
 import { UsersService } from '../../../src/modules/users/services/users.service';
 import { ROLE_PERMISSIONS } from '../../../src/common/config/roles.config';
 
-// ─── Fixtures ─────────────────────────────────────────────────────────────────
-
 const mockUser = {
   id: 'user-1',
   tenantId: 'tenant-1',
@@ -39,8 +37,6 @@ const mockUserSafe = {
   lastLoginAt: null,
 };
 
-// ─── Mock DB ──────────────────────────────────────────────────────────────────
-
 const mockDb = {
   query: {
     users: {
@@ -53,8 +49,6 @@ const mockDb = {
   delete: jest.fn(),
 };
 
-// ─── Suite ────────────────────────────────────────────────────────────────────
-
 describe('UsersService', () => {
   let service: UsersService;
 
@@ -66,8 +60,6 @@ describe('UsersService', () => {
     service = module.get(UsersService);
     jest.clearAllMocks();
   });
-
-  // ─── getPermissions ──────────────────────────────────────────────────────────
 
   describe('getPermissions', () => {
     it('returns correct permissions for tenant_admin', () => {
@@ -107,8 +99,6 @@ describe('UsersService', () => {
     });
   });
 
-  // ─── validateCredentials ─────────────────────────────────────────────────────
-
   describe('validateCredentials', () => {
     it('returns user when credentials are valid', async () => {
       mockDb.query.users.findFirst.mockResolvedValue(mockUser);
@@ -146,11 +136,9 @@ describe('UsersService', () => {
     });
   });
 
-  // ─── create ──────────────────────────────────────────────────────────────────
-
   describe('create', () => {
     it('hashes password and inserts user', async () => {
-      mockDb.query.users.findFirst.mockResolvedValue(null); // email not taken
+      mockDb.query.users.findFirst.mockResolvedValue(null);
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-pw');
 
       const returningMock = jest.fn().mockResolvedValue([mockUserSafe]);
@@ -167,7 +155,6 @@ describe('UsersService', () => {
 
       expect(bcrypt.hash).toHaveBeenCalledWith('plain-pass', 10);
       expect(result.email).toBe('jane@acme.com');
-      // password nunca se devuelve
       expect(result).not.toHaveProperty('password');
     });
 
@@ -184,8 +171,6 @@ describe('UsersService', () => {
       ).rejects.toThrow(ConflictException);
     });
   });
-
-  // ─── createTenantAdmin ───────────────────────────────────────────────────────
 
   describe('createTenantAdmin', () => {
     it('returns user with plain password — only this once', async () => {
@@ -204,12 +189,9 @@ describe('UsersService', () => {
         role: 'tenant_admin',
       });
 
-      // La contraseña en texto plano debe estar en la respuesta
       expect(result.password).toBe('PlainPass123!');
     });
   });
-
-  // ─── findOneInTenant ─────────────────────────────────────────────────────────
 
   describe('findOneInTenant', () => {
     it('returns user when found in tenant', async () => {
@@ -228,8 +210,6 @@ describe('UsersService', () => {
     });
   });
 
-  // ─── update ──────────────────────────────────────────────────────────────────
-
   describe('update', () => {
     it('hashes new password when provided', async () => {
       mockDb.query.users.findFirst.mockResolvedValue(mockUserSafe);
@@ -238,11 +218,9 @@ describe('UsersService', () => {
       const updatedUser = { ...mockUserSafe, role: 'editor' };
       const whereMock = jest.fn().mockResolvedValue([updatedUser]);
       mockDb.update.mockReturnValue({
-        set: jest
-          .fn()
-          .mockReturnValue({
-            where: jest.fn().mockReturnValue({ returning: whereMock }),
-          }),
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({ returning: whereMock }),
+        }),
       });
 
       await service.update('user-1', 'tenant-1', { password: 'NewPass123!' });
@@ -257,11 +235,9 @@ describe('UsersService', () => {
         .fn()
         .mockResolvedValue([{ ...mockUserSafe, role: 'editor' }]);
       mockDb.update.mockReturnValue({
-        set: jest
-          .fn()
-          .mockReturnValue({
-            where: jest.fn().mockReturnValue({ returning: whereMock }),
-          }),
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({ returning: whereMock }),
+        }),
       });
 
       await service.update('user-1', 'tenant-1', { role: 'editor' });
@@ -269,8 +245,6 @@ describe('UsersService', () => {
       expect(bcrypt.hash).not.toHaveBeenCalled();
     });
   });
-
-  // ─── remove ──────────────────────────────────────────────────────────────────
 
   describe('remove', () => {
     it('deletes user when found in tenant', async () => {

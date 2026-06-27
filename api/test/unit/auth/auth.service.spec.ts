@@ -2,7 +2,6 @@ import { UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Test } from '@nestjs/testing';
 
-// Mock bcrypt a nivel de módulo — sus propiedades no son reconfigurables con spyOn
 jest.mock('bcrypt', () => ({
   hash: jest.fn(),
   compare: jest.fn(),
@@ -11,8 +10,6 @@ jest.mock('bcrypt', () => ({
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '../../../src/modules/auth/services/auth.service';
 import { UsersService } from '../../../src/modules/users/services/users.service';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 const mockUser = {
   id: 'user-1',
@@ -31,12 +28,10 @@ const mockRefreshToken = {
   userId: 'user-1',
   tokenHash: 'hashed-token',
   familyId: 'family-1',
-  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 días en el futuro
+  expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
   revokedAt: null,
   createdAt: new Date(),
 };
-
-// ─── Mocks ────────────────────────────────────────────────────────────────────
 
 const mockDb = {
   insert: jest
@@ -62,8 +57,6 @@ const mockJwtService = {
   sign: jest.fn().mockReturnValue('mock-access-token'),
 };
 
-// ─── Suite ────────────────────────────────────────────────────────────────────
-
 describe('AuthService', () => {
   let service: AuthService;
 
@@ -80,8 +73,6 @@ describe('AuthService', () => {
     service = module.get(AuthService);
     jest.clearAllMocks();
   });
-
-  // ─── login ──────────────────────────────────────────────────────────────────
 
   describe('login', () => {
     it('returns access_token and refresh_token on valid credentials', async () => {
@@ -111,8 +102,6 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
   });
-
-  // ─── refresh ────────────────────────────────────────────────────────────────
 
   describe('refresh', () => {
     it('returns new tokens when refresh token is valid', async () => {
@@ -156,7 +145,7 @@ describe('AuthService', () => {
     it('throws when refresh token is expired', async () => {
       const expiredToken = {
         ...mockRefreshToken,
-        expiresAt: new Date(Date.now() - 1000), // en el pasado
+        expiresAt: new Date(Date.now() - 1000),
       };
       mockDb.query.refreshTokens.findMany.mockResolvedValue([expiredToken]);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
@@ -188,8 +177,6 @@ describe('AuthService', () => {
     });
   });
 
-  // ─── logout ─────────────────────────────────────────────────────────────────
-
   describe('logout', () => {
     it('revokes the token family when token is found', async () => {
       mockDb.query.refreshTokens.findMany.mockResolvedValue([mockRefreshToken]);
@@ -214,8 +201,6 @@ describe('AuthService', () => {
       expect(mockDb.update).not.toHaveBeenCalled();
     });
   });
-
-  // ─── changePassword ─────────────────────────────────────────────────────────
 
   describe('changePassword', () => {
     it('updates password when current password is correct', async () => {

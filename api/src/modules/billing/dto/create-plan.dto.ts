@@ -50,5 +50,5 @@ export class CreatePlanDto {
   @IsInt()
   @Min(0)
   @IsOptional()
-  priceUsd?: number; // en centavos
+  priceUsd?: number;
 }

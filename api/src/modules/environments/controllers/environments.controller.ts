@@ -38,7 +38,11 @@ export class EnvironmentsController {
     @Body() dto: CreateEnvironmentDto,
     @Req() req: Request & { user: RequestUser },
   ) {
-    return this.environmentsService.create(projectId, dto, buildAuditContext(req));
+    return this.environmentsService.create(
+      projectId,
+      dto,
+      buildAuditContext(req),
+    );
   }
 
   @Get()
@@ -74,6 +78,9 @@ export class EnvironmentsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: Request & { user: RequestUser },
   ) {
-    return this.environmentsService.removePermanently(id, buildAuditContext(req));
+    return this.environmentsService.removePermanently(
+      id,
+      buildAuditContext(req),
+    );
   }
 }

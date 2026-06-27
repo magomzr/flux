@@ -20,7 +20,11 @@ export class EnvironmentsService {
     private readonly audit: AuditService,
   ) {}
 
-  async create(projectId: string, dto: CreateEnvironmentDto, ctx: AuditContext) {
+  async create(
+    projectId: string,
+    dto: CreateEnvironmentDto,
+    ctx: AuditContext,
+  ) {
     const existing = await this.db.query.environments.findFirst({
       where: and(
         eq(environments.projectId, projectId),
@@ -57,7 +61,6 @@ export class EnvironmentsService {
       metadata: { name: environment.name, slug: environment.slug, projectId },
     });
 
-    // Crear flag_values para todos los flags existentes en el proyecto
     const projectFlags = await this.db.query.flags.findMany({
       where: eq(flags.projectId, projectId),
       columns: { id: true },
@@ -112,7 +115,10 @@ export class EnvironmentsService {
       entityType: 'environment',
       entityId: id,
       context: ctx,
-      metadata: { before: { name: before.name, color: before.color }, after: dto },
+      metadata: {
+        before: { name: before.name, color: before.color },
+        after: dto,
+      },
     });
 
     return updated;
@@ -131,8 +137,6 @@ export class EnvironmentsService {
       metadata: { name: environment.name, slug: environment.slug },
     });
   }
-
-  // ─── Privados ────────────────────────────────────────────────────────────────
 
   private async clearDefault(projectId: string) {
     await this.db

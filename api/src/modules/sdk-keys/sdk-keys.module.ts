@@ -4,7 +4,7 @@ import { SdkKeysService } from './services/sdk-keys.service';
 import { DeliveryModule } from '../delivery/delivery.module';
 
 @Module({
-  imports: [DeliveryModule], // para inyectar ApiKeyCacheService
+  imports: [DeliveryModule],
   controllers: [SdkKeysController],
   providers: [SdkKeysService],
 })

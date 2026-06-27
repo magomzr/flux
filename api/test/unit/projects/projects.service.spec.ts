@@ -93,11 +93,9 @@ describe('ProjectsService', () => {
       const deactivated = { ...mockProject, isActive: false };
       const returningMock = jest.fn().mockResolvedValue([deactivated]);
       mockDb.update.mockReturnValue({
-        set: jest
-          .fn()
-          .mockReturnValue({
-            where: jest.fn().mockReturnValue({ returning: returningMock }),
-          }),
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({ returning: returningMock }),
+        }),
       });
 
       const result = await service.deactivate('project-1', ctx);

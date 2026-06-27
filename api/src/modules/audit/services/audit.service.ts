@@ -36,7 +36,6 @@ export class AuditService {
         ip: entry.context.ip ?? null,
       });
     } catch (err) {
-      // El audit log nunca debe romper el flujo principal
       this.logger.error(
         `Failed to write audit log [${entry.action}] for ${entry.entityType}:${entry.entityId}`,
         err,
@@ -44,10 +43,6 @@ export class AuditService {
     }
   }
 
-  /**
-   * Consulta el historial de auditoría de un tenant.
-   * Solo lectura — el audit log es inmutable.
-   */
   async query(options: AuditQueryOptions) {
     const conditions = [eq(auditLogs.tenantId, options.tenantId)];
 
@@ -75,7 +70,9 @@ export class AuditService {
 
     return rows.map((row) => ({
       ...row,
-      metadata: row.metadata ? (JSON.parse(row.metadata) as Record<string, unknown>) : null,
+      metadata: row.metadata
+        ? (JSON.parse(row.metadata) as Record<string, unknown>)
+        : null,
     }));
   }
 }

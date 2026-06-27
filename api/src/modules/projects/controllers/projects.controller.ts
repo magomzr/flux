@@ -38,7 +38,10 @@ export class ProjectsController {
     @Body() dto: CreateProjectDto,
     @Req() req: Request & { user: RequestUser },
   ) {
-    return this.projectsService.create({ ...dto, tenantId }, buildAuditContext(req));
+    return this.projectsService.create(
+      { ...dto, tenantId },
+      buildAuditContext(req),
+    );
   }
 
   @Get()

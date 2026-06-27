@@ -54,8 +54,6 @@ describe('TenantsService', () => {
     jest.clearAllMocks();
   });
 
-  // ─── create ──────────────────────────────────────────────────────────────────
-
   describe('create', () => {
     it('creates tenant and tenant_admin, returns both with plain password', async () => {
       mockDb.query.tenants.findFirst.mockResolvedValue(null);
@@ -113,8 +111,6 @@ describe('TenantsService', () => {
     });
   });
 
-  // ─── findOne ─────────────────────────────────────────────────────────────────
-
   describe('findOne', () => {
     it('returns tenant when found', async () => {
       mockDb.query.tenants.findFirst.mockResolvedValue(mockTenant);
@@ -130,19 +126,15 @@ describe('TenantsService', () => {
     });
   });
 
-  // ─── deactivate ──────────────────────────────────────────────────────────────
-
   describe('deactivate', () => {
     it('sets isActive to false and logs audit', async () => {
       mockDb.query.tenants.findFirst.mockResolvedValue(mockTenant);
       const deactivated = { ...mockTenant, isActive: false };
       const whereMock = jest.fn().mockResolvedValue([deactivated]);
       mockDb.update.mockReturnValue({
-        set: jest
-          .fn()
-          .mockReturnValue({
-            where: jest.fn().mockReturnValue({ returning: whereMock }),
-          }),
+        set: jest.fn().mockReturnValue({
+          where: jest.fn().mockReturnValue({ returning: whereMock }),
+        }),
       });
 
       const result = await service.deactivate('tenant-1', ctx);
@@ -153,8 +145,6 @@ describe('TenantsService', () => {
       );
     });
   });
-
-  // ─── removePermanently ───────────────────────────────────────────────────────
 
   describe('removePermanently', () => {
     it('deletes tenant and logs audit', async () => {

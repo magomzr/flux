@@ -11,21 +11,16 @@ import { SubscribeDto } from '../dto/subscribe.dto';
 import type { CostEstimateDto } from '../dto/cost-estimate.dto';
 import type { Db } from '../../../db';
 
-// Precios de overage en centavos (USD)
-// Solo aplica al plan 'scale' — Studio y Starter no tienen medidores.
 const OVERAGE = {
-  evaluationsPer1k: 1,    // $0.01 por cada 1000 evaluaciones extra
-  storageMbPerMonth: 2,   // $0.02 por MB extra al mes
+  evaluationsPer1k: 1,
+  storageMbPerMonth: 2,
 } as const;
 
-// Planes con precio fijo (sin overage de evaluaciones)
 const FLAT_RATE_PLANS = new Set(['starter', 'studio']);
 
 @Injectable()
 export class BillingService {
   constructor(@Inject('DB') private readonly db: Db) {}
-
-  // ─── Plans ────────────────────────────────────────────────────────────────────
 
   async createPlan(dto: CreatePlanDto) {
     const existing = await this.db.query.plans.findFirst({
@@ -68,24 +63,15 @@ export class BillingService {
     return plan;
   }
 
-  // ─── Subscriptions ────────────────────────────────────────────────────────────
-
-  /**
-   * Suscribe un tenant a un plan.
-   * Cierra la suscripción activa anterior (si existe) y abre una nueva.
-   */
   async subscribe(tenantId: string, dto: SubscribeDto) {
-    await this.findPlan(dto.planId); // valida que el plan exista
+    await this.findPlan(dto.planId);
 
     const active = await this.getActiveSubscription(tenantId);
 
     if (active?.planId === dto.planId) {
-      throw new ConflictException(
-        `Tenant is already on plan "${dto.planId}"`,
-      );
+      throw new ConflictException(`Tenant is already on plan "${dto.planId}"`);
     }
 
-    // Cerrar suscripción activa
     if (active) {
       await this.db
         .update(tenantSubscriptions)
@@ -123,10 +109,6 @@ export class BillingService {
     });
   }
 
-  /**
-   * Devuelve el plan activo del tenant junto con los límites.
-   * Útil para que delivery y flags verifiquen límites.
-   */
   async getActivePlan(tenantId: string) {
     const subscription = await this.getActiveSubscription(tenantId);
 
@@ -134,8 +116,6 @@ export class BillingService {
 
     return this.findPlan(subscription.planId);
   }
-
-  // ─── Usage ────────────────────────────────────────────────────────────────────
 
   async getCurrentUsage(tenantId: string) {
     const now = new Date();
@@ -150,37 +130,47 @@ export class BillingService {
 
     const plan = await this.getActivePlan(tenantId);
 
-    const daysInMonth   = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const dayOfMonth    = now.getDate();
+    const daysInMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
+    const dayOfMonth = now.getDate();
     const monthFraction = Math.max(dayOfMonth, 1) / daysInMonth;
 
-    const actualEvaluations = usageRecord?.evaluationsCount  ?? 0;
-    const actualStorageMb   = usageRecord?.assetStorageMb    ?? 0;
-    const actualSseMax      = usageRecord?.sseConnectionsMax ?? 0;
+    const actualEvaluations = usageRecord?.evaluationsCount ?? 0;
+    const actualStorageMb = usageRecord?.assetStorageMb ?? 0;
+    const actualSseMax = usageRecord?.sseConnectionsMax ?? 0;
 
     const projectedEvaluations = Math.ceil(actualEvaluations / monthFraction);
-    const projectedStorageMb   = actualStorageMb;
-    const projectedSseMax      = actualSseMax;
+    const projectedStorageMb = actualStorageMb;
+    const projectedSseMax = actualSseMax;
 
-    let baseCostUsd    = 0;
+    let baseCostUsd = 0;
     let overageCostUsd = 0;
     const breakdown: Record<string, number> = {};
 
     if (plan) {
       baseCostUsd = plan.priceUsd / 100;
 
-      // Overage solo aplica a planes con medidores (Scale)
       if (!FLAT_RATE_PLANS.has(plan.id)) {
-        if (plan.maxEvaluationsMonth !== null && projectedEvaluations > plan.maxEvaluationsMonth) {
+        if (
+          plan.maxEvaluationsMonth !== null &&
+          projectedEvaluations > plan.maxEvaluationsMonth
+        ) {
           const extra = projectedEvaluations - plan.maxEvaluationsMonth;
-          const cost  = Math.ceil(extra / 1000) * (OVERAGE.evaluationsPer1k / 100);
+          const cost =
+            Math.ceil(extra / 1000) * (OVERAGE.evaluationsPer1k / 100);
           overageCostUsd += cost;
           breakdown['evaluations_overage_usd'] = cost;
         }
 
-        if (plan.maxAssetStorageMb !== null && projectedStorageMb > plan.maxAssetStorageMb) {
+        if (
+          plan.maxAssetStorageMb !== null &&
+          projectedStorageMb > plan.maxAssetStorageMb
+        ) {
           const extra = projectedStorageMb - plan.maxAssetStorageMb;
-          const cost  = extra * (OVERAGE.storageMbPerMonth / 100);
+          const cost = extra * (OVERAGE.storageMbPerMonth / 100);
           overageCostUsd += cost;
           breakdown['storage_overage_usd'] = cost;
         }
@@ -197,19 +187,19 @@ export class BillingService {
       },
       plan: plan ? { id: plan.id, name: plan.name, baseCostUsd } : null,
       actual: {
-        evaluationsCount:  actualEvaluations,
-        assetStorageMb:    actualStorageMb,
+        evaluationsCount: actualEvaluations,
+        assetStorageMb: actualStorageMb,
         sseConnectionsMax: actualSseMax,
       },
       projected: {
-        evaluationsCount:  projectedEvaluations,
-        assetStorageMb:    projectedStorageMb,
+        evaluationsCount: projectedEvaluations,
+        assetStorageMb: projectedStorageMb,
         sseConnectionsMax: projectedSseMax,
       },
       cost: {
         baseCostUsd,
-        overageCostUsd:  Math.round(overageCostUsd * 100) / 100,
-        totalCostUsd:    Math.round((baseCostUsd + overageCostUsd) * 100) / 100,
+        overageCostUsd: Math.round(overageCostUsd * 100) / 100,
+        totalCostUsd: Math.round((baseCostUsd + overageCostUsd) * 100) / 100,
         breakdown,
       },
     };
@@ -222,12 +212,6 @@ export class BillingService {
     });
   }
 
-  // ─── Cost calculator ──────────────────────────────────────────────────────────
-
-  /**
-   * Calcula el costo estimado mensual para un tenant dado su uso proyectado.
-   * Compara contra todos los planes disponibles.
-   */
   async calculateCost(dto: CostEstimateDto) {
     const allPlans = await this.findAllPlans();
 
@@ -236,24 +220,29 @@ export class BillingService {
       let overageCostUsd = 0;
       const breakdown: Record<string, number> = {};
 
-      // Evaluaciones extra — solo en planes con medidores
       const evalUsage = dto.evaluationsMonth ?? 0;
-      if (!FLAT_RATE_PLANS.has(plan.id) && plan.maxEvaluationsMonth !== null && evalUsage > plan.maxEvaluationsMonth) {
+      if (
+        !FLAT_RATE_PLANS.has(plan.id) &&
+        plan.maxEvaluationsMonth !== null &&
+        evalUsage > plan.maxEvaluationsMonth
+      ) {
         const extra = evalUsage - plan.maxEvaluationsMonth;
         const cost = Math.ceil(extra / 1000) * (OVERAGE.evaluationsPer1k / 100);
         overageCostUsd += cost;
         breakdown['evaluations_overage_usd'] = cost;
       }
 
-      // SSE — indicar si el plan lo incluye
       const sseUsage = dto.sseConnectionsMax ?? 0;
       if (!plan.hasSse && sseUsage > 0) {
         breakdown['sse_not_available'] = 0;
       }
 
-      // Storage extra — solo en planes con medidores
       const storageUsage = dto.assetStorageMb ?? 0;
-      if (!FLAT_RATE_PLANS.has(plan.id) && plan.maxAssetStorageMb !== null && storageUsage > plan.maxAssetStorageMb) {
+      if (
+        !FLAT_RATE_PLANS.has(plan.id) &&
+        plan.maxAssetStorageMb !== null &&
+        storageUsage > plan.maxAssetStorageMb
+      ) {
         const extra = storageUsage - plan.maxAssetStorageMb;
         const cost = extra * (OVERAGE.storageMbPerMonth / 100);
         overageCostUsd += cost;

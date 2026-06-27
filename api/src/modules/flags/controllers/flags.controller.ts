@@ -31,8 +31,6 @@ import type { RequestUser } from '../../../common/decorators/current-user.decora
 export class FlagsController {
   constructor(private readonly flagsService: FlagsService) {}
 
-  // ─── Flags CRUD ───────────────────────────────────────────────────────────────
-
   @Post()
   @RequirePerms(Perm.FLAG_WRITE)
   @TenantResource({ param: 'projectId', via: 'project' })
@@ -80,8 +78,6 @@ export class FlagsController {
     return this.flagsService.removePermanently(id, buildAuditContext(req));
   }
 
-  // ─── Flag values ──────────────────────────────────────────────────────────────
-
   @Get(':flagId/values/:environmentId')
   @RequirePerms(Perm.FLAG_READ)
   @TenantResource({ param: 'flagId', via: 'flag' })
@@ -101,7 +97,12 @@ export class FlagsController {
     @Body() dto: UpdateFlagValueDto,
     @Req() req: Request & { user: RequestUser },
   ) {
-    return this.flagsService.updateFlagValue(flagId, environmentId, dto, buildAuditContext(req));
+    return this.flagsService.updateFlagValue(
+      flagId,
+      environmentId,
+      dto,
+      buildAuditContext(req),
+    );
   }
 
   @Post(':flagId/values/:environmentId/publish')
@@ -112,6 +113,10 @@ export class FlagsController {
     @Param('environmentId', ParseUUIDPipe) environmentId: string,
     @Req() req: Request & { user: RequestUser },
   ) {
-    return this.flagsService.publishFlagValue(flagId, environmentId, buildAuditContext(req));
+    return this.flagsService.publishFlagValue(
+      flagId,
+      environmentId,
+      buildAuditContext(req),
+    );
   }
 }

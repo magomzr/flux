@@ -17,23 +17,13 @@ type CachedApiKeyInternal = CachedApiKey & { _hash: string };
 export class ApiKeyCacheService {
   private readonly logger = new Logger(ApiKeyCacheService.name);
 
-  /**
-   * Cache L1: rawKey → CachedApiKey (resultado ya verificado con bcrypt)
-   * Hot path — O(1) lookup, sin crypto, sin DB.
-   * bcrypt solo ocurre una vez por key, en el primer request.
-   */
   private readonly verified = new Map<string, CachedApiKey>();
 
-  /**
-   * Cache L2: keyPrefix → CachedApiKeyInternal[]
-   * Usado solo en L1 miss para cargar candidatos desde DB.
-   */
   private readonly byPrefix = new Map<string, CachedApiKeyInternal[]>();
 
   constructor(@Inject('DB') private readonly db: Db) {}
 
   async validate(rawKey: string): Promise<CachedApiKey | null> {
-    // L1 hit — camino feliz, sin bcrypt, sin DB
     const cached = this.verified.get(rawKey);
     if (cached) {
       if (cached.expiresAt && cached.expiresAt < new Date()) {
@@ -43,7 +33,6 @@ export class ApiKeyCacheService {
       }
     }
 
-    // L1 miss — resolver via L2 + bcrypt (solo ocurre una vez por key)
     const prefix = this.extractPrefix(rawKey);
     if (!prefix) return null;
 
@@ -60,7 +49,6 @@ export class ApiKeyCacheService {
       const match = await bcrypt.compare(rawKey, candidate._hash);
       if (match) {
         const { _hash, ...safe } = candidate;
-        // Guardar en L1 — todos los requests futuros son O(1)
         this.verified.set(rawKey, safe);
         return safe;
       }
@@ -71,7 +59,6 @@ export class ApiKeyCacheService {
 
   invalidate(prefix: string): void {
     this.byPrefix.delete(prefix);
-    // Limpiar L1 entries con este prefix
     for (const key of this.verified.keys()) {
       if (key.startsWith(prefix + '_')) {
         this.verified.delete(key);
@@ -84,8 +71,6 @@ export class ApiKeyCacheService {
     this.verified.clear();
     this.byPrefix.clear();
   }
-
-  // ─── Privados ─────────────────────────────────────────────────────────────────
 
   private extractPrefix(rawKey: string): string | null {
     const parts = rawKey.split('_');
@@ -121,10 +106,7 @@ export class ApiKeyCacheService {
       )
       .innerJoin(plans, eq(tenantSubscriptions.planId, plans.id))
       .where(
-        and(
-          eq(sdkApiKeys.keyPrefix, prefix),
-          eq(sdkApiKeys.isActive, true),
-        ),
+        and(eq(sdkApiKeys.keyPrefix, prefix), eq(sdkApiKeys.isActive, true)),
       );
 
     return rows.map((row) => ({

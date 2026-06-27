@@ -1,8 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { FlagCacheService } from '../../../src/modules/delivery/services/flag-cache.service';
 
-// ─── Mock DB ──────────────────────────────────────────────────────────────────
-
 const mockRows = [
   { key: 'checkout_v2', type: 'boolean', enabled: true, value: null },
   { key: 'banner_text', type: 'string', enabled: false, value: 'Hello' },
@@ -12,8 +10,6 @@ const mockDb = {
   select: jest.fn(),
   from: jest.fn(),
 };
-
-// ─── Suite ────────────────────────────────────────────────────────────────────
 
 describe('FlagCacheService', () => {
   let service: FlagCacheService;
@@ -26,14 +22,11 @@ describe('FlagCacheService', () => {
     service = module.get(FlagCacheService);
     jest.clearAllMocks();
 
-    // Mock the Drizzle query chain: select().from().innerJoin().where()
     const whereMock = jest.fn().mockResolvedValue(mockRows);
     const innerJoinMock = jest.fn().mockReturnValue({ where: whereMock });
     const fromMock = jest.fn().mockReturnValue({ innerJoin: innerJoinMock });
     mockDb.select.mockReturnValue({ from: fromMock });
   });
-
-  // ─── getAll ──────────────────────────────────────────────────────────────────
 
   describe('getAll', () => {
     it('loads flags from DB on first call and returns payload array', async () => {
@@ -53,7 +46,6 @@ describe('FlagCacheService', () => {
       await service.getAll('env-1');
       await service.getAll('env-1');
 
-      // DB should only be called once
       expect(mockDb.select).toHaveBeenCalledTimes(1);
     });
 
@@ -61,7 +53,6 @@ describe('FlagCacheService', () => {
       const r1 = await service.getAll('env-1');
       service.invalidateAll();
 
-      // Reset mock to return same data
       const whereMock = jest.fn().mockResolvedValue(mockRows);
       const innerJoinMock = jest.fn().mockReturnValue({ where: whereMock });
       const fromMock = jest.fn().mockReturnValue({ innerJoin: innerJoinMock });
@@ -71,8 +62,6 @@ describe('FlagCacheService', () => {
       expect(r1.etag).toBe(r2.etag);
     });
   });
-
-  // ─── getOne ──────────────────────────────────────────────────────────────────
 
   describe('getOne', () => {
     it('returns specific flag by key', async () => {
@@ -87,18 +76,13 @@ describe('FlagCacheService', () => {
     });
   });
 
-  // ─── handleFlagChanged (cache invalidation) ───────────────────────────────────
-
   describe('handleFlagChanged', () => {
     it('invalidates cache for the affected environment', async () => {
-      // Warm up cache
       await service.getAll('env-1');
       expect(mockDb.select).toHaveBeenCalledTimes(1);
 
-      // Trigger invalidation
       service.handleFlagChanged({ environmentId: 'env-1' });
 
-      // Next call should hit DB again
       await service.getAll('env-1');
       expect(mockDb.select).toHaveBeenCalledTimes(2);
     });
@@ -108,20 +92,15 @@ describe('FlagCacheService', () => {
       await service.getAll('env-2');
       expect(mockDb.select).toHaveBeenCalledTimes(2);
 
-      // Invalidate only env-1
       service.handleFlagChanged({ environmentId: 'env-1' });
 
-      // env-2 should still be cached
       await service.getAll('env-2');
-      expect(mockDb.select).toHaveBeenCalledTimes(2); // no new DB call for env-2
+      expect(mockDb.select).toHaveBeenCalledTimes(2);
 
-      // env-1 should reload
       await service.getAll('env-1');
       expect(mockDb.select).toHaveBeenCalledTimes(3);
     });
   });
-
-  // ─── invalidateAll ────────────────────────────────────────────────────────────
 
   describe('invalidateAll', () => {
     it('clears all cached environments', async () => {
@@ -137,14 +116,11 @@ describe('FlagCacheService', () => {
     });
   });
 
-  // ─── ETag ─────────────────────────────────────────────────────────────────────
-
   describe('ETag', () => {
     it('returns different ETags when flag state changes', async () => {
       const r1 = await service.getAll('env-1');
       service.invalidateAll();
 
-      // Change enabled state
       const modifiedRows = mockRows.map((r) =>
         r.key === 'checkout_v2' ? { ...r, enabled: false } : r,
       );

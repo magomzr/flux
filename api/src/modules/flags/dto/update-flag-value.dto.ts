@@ -1,8 +1,4 @@
-import {
-  IsBoolean,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class UpdateFlagValueDto {
   @IsBoolean()
@@ -11,5 +7,5 @@ export class UpdateFlagValueDto {
 
   @IsString()
   @IsOptional()
-  value?: string; // JSON serializado — el cliente es responsable del formato
+  value?: string;
 }

@@ -27,17 +27,12 @@ export class SdkApiKeyGuard implements CanActivate {
       throw new UnauthorizedException('Invalid or expired API key');
     }
 
-    // Adjuntar el contexto al request para que el controller lo use
     request[SDK_KEY_CONTEXT] = keyContext;
 
     return true;
   }
 }
 
-/**
- * Helper para extraer el contexto de la API key desde el request.
- * Usado en los controllers SDK.
- */
 export function getSdkContext(request: Record<string, unknown>): CachedApiKey {
   return request[SDK_KEY_CONTEXT] as CachedApiKey;
 }

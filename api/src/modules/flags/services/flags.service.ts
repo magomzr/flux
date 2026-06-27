@@ -105,7 +105,10 @@ export class FlagsService {
       entityType: 'flag',
       entityId: id,
       context: ctx,
-      metadata: { before: { name: before.name, description: before.description }, after: dto },
+      metadata: {
+        before: { name: before.name, description: before.description },
+        after: dto,
+      },
     });
 
     return updated;
@@ -124,8 +127,6 @@ export class FlagsService {
       metadata: { key: flag.key, name: flag.name },
     });
   }
-
-  // ─── Flag values ─────────────────────────────────────────────────────────────
 
   async getFlagValue(flagId: string, environmentId: string) {
     const flagValue = await this.db.query.flagValues.findFirst({
@@ -176,7 +177,6 @@ export class FlagsService {
       },
     });
 
-    // Invalidar cache del ambiente afectado
     this.emitFlagChanged(environmentId);
 
     return updated;
@@ -212,13 +212,10 @@ export class FlagsService {
       metadata: { flagId, environmentId, enabled: before.enabled },
     });
 
-    // Invalidar cache y notificar SSE
     this.emitFlagChanged(environmentId, before.id);
 
     return updated;
   }
-
-  // ─── Privados ─────────────────────────────────────────────────────────────────
 
   private emitFlagChanged(environmentId: string, flagKey?: string): void {
     const event: FlagChangedEvent = { environmentId, flagKey };

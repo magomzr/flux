@@ -5,10 +5,6 @@ import type { Db } from '../../db';
 
 export type TenantResolvable = 'project' | 'environment' | 'flag';
 
-/**
- * Servicio centralizado que sabe cómo obtener el tenantId de cualquier
- * entidad del sistema. Es la única fuente de verdad para ownership checks.
- */
 @Injectable()
 export class TenantResolverService {
   constructor(@Inject('DB') private readonly db: Db) {}

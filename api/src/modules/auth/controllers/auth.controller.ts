@@ -1,4 +1,12 @@
-import { Controller, Post, Patch, Body, HttpCode, HttpStatus, Req } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Patch,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Req,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { AuthService } from '../services/auth.service';
@@ -17,7 +25,10 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login con email y password' })
-  @ApiResponse({ status: 200, description: 'Devuelve access_token y refresh_token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Devuelve access_token y refresh_token',
+  })
   @ApiResponse({ status: 401, description: 'Credenciales inválidas' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
@@ -28,7 +39,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Renueva el access token usando el refresh token' })
   @ApiResponse({ status: 200, description: 'Nuevo par de tokens' })
-  @ApiResponse({ status: 401, description: 'Refresh token inválido o expirado' })
+  @ApiResponse({
+    status: 401,
+    description: 'Refresh token inválido o expirado',
+  })
   refresh(@Body() dto: RefreshDto) {
     return this.authService.refresh(dto.refresh_token);
   }
@@ -43,8 +57,6 @@ export class AuthController {
   }
 }
 
-// Endpoint separado bajo /users/me para evitar conflicto con el interceptor
-// que excluye /auth/* del token de autorización
 @ApiTags('Me')
 @Controller('users/me')
 export class MeController {

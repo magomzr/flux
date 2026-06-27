@@ -16,19 +16,10 @@ import { FLAG_CHANGED_EVENT } from '../delivery.types';
 export class FlagCacheService {
   private readonly logger = new Logger(FlagCacheService.name);
 
-  /**
-   * Cache principal: environmentId → EnvironmentCache
-   * Map es más rápido que un objeto plano para inserciones/borrados frecuentes.
-   */
   private readonly cache = new Map<string, EnvironmentCache>();
 
   constructor(@Inject('DB') private readonly db: Db) {}
 
-  /**
-   * Devuelve todos los flags de un ambiente.
-   * Carga lazy desde DB si no está en cache.
-   * Hot path — debe ser O(1) cuando el cache está caliente.
-   */
   async getAll(environmentId: string): Promise<{
     flags: SdkFlagPayload[];
     etag: string;
@@ -40,10 +31,6 @@ export class FlagCacheService {
     };
   }
 
-  /**
-   * Devuelve un flag específico por key.
-   * Hot path — O(1) lookup en Map.
-   */
   async getOne(
     environmentId: string,
     key: string,
@@ -54,19 +41,11 @@ export class FlagCacheService {
     return { key, ...entry };
   }
 
-  /**
-   * Devuelve el ETag actual sin cargar los flags.
-   * Usado para validar conditional GET sin serializar el payload.
-   */
   async getEtag(environmentId: string): Promise<string> {
     const cached = await this.getOrLoad(environmentId);
     return cached.etag;
   }
 
-  /**
-   * Invalida el cache de un ambiente.
-   * Llamado cuando un flag cambia — el próximo request recarga desde DB.
-   */
   @OnEvent(FLAG_CHANGED_EVENT)
   handleFlagChanged(event: FlagChangedEvent): void {
     if (this.cache.has(event.environmentId)) {
@@ -77,13 +56,10 @@ export class FlagCacheService {
     }
   }
 
-  /** Invalida todos los ambientes — usado en casos de emergencia */
   invalidateAll(): void {
     this.cache.clear();
     this.logger.warn('Full cache invalidated');
   }
-
-  // ─── Privados ─────────────────────────────────────────────────────────────────
 
   private async getOrLoad(environmentId: string): Promise<EnvironmentCache> {
     const cached = this.cache.get(environmentId);
@@ -95,7 +71,6 @@ export class FlagCacheService {
   private async loadFromDb(environmentId: string): Promise<EnvironmentCache> {
     this.logger.debug(`Loading flags from DB for environment ${environmentId}`);
 
-    // JOIN flags + flag_values en una sola query
     const rows = await this.db
       .select({
         key: flags.key,
@@ -132,12 +107,7 @@ export class FlagCacheService {
     return entry;
   }
 
-  /**
-   * Computa un ETag determinístico del estado actual de los flags.
-   * Permite al cliente hacer conditional GET con If-None-Match.
-   */
   private computeEtag(flagMap: Map<string, CachedFlagEntry>): string {
-    // Ordenar por key para que el hash sea determinístico
     const sorted = [...flagMap.entries()]
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}:${v.enabled ? '1' : '0'}:${v.value ?? ''}`)

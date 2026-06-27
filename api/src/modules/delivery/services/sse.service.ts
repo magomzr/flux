@@ -14,17 +14,8 @@ export interface SseEvent {
 export class SseService {
   private readonly logger = new Logger(SseService.name);
 
-  /**
-   * Map<environmentId, Set<Subject<SseEvent>>>
-   * Cada conexión SSE activa tiene su propio Subject.
-   * Cuando un flag cambia, se pushea a todos los subjects del ambiente.
-   */
   private readonly connections = new Map<string, Set<Subject<SseEvent>>>();
 
-  /**
-   * Registra una nueva conexión SSE para un ambiente.
-   * Devuelve el Subject que el controller convierte en Observable.
-   */
   register(environmentId: string): Subject<SseEvent> {
     const subject = new Subject<SseEvent>();
 
@@ -35,15 +26,12 @@ export class SseService {
     this.connections.get(environmentId)!.add(subject);
     this.logger.debug(
       `SSE connection registered for environment ${environmentId} ` +
-      `(total: ${this.connections.get(environmentId)!.size})`,
+        `(total: ${this.connections.get(environmentId)!.size})`,
     );
 
     return subject;
   }
 
-  /**
-   * Elimina una conexión SSE cuando el cliente desconecta.
-   */
   unregister(environmentId: string, subject: Subject<SseEvent>): void {
     const set = this.connections.get(environmentId);
     if (!set) return;
@@ -58,10 +46,6 @@ export class SseService {
     this.logger.debug(`SSE connection closed for environment ${environmentId}`);
   }
 
-  /**
-   * Notifica a todos los clientes SSE de un ambiente que los flags cambiaron.
-   * Llamado automáticamente cuando se emite FLAG_CHANGED_EVENT.
-   */
   @OnEvent(FLAG_CHANGED_EVENT)
   handleFlagChanged(event: FlagChangedEvent): void {
     const set = this.connections.get(event.environmentId);
@@ -85,7 +69,6 @@ export class SseService {
     );
   }
 
-  /** Número total de conexiones SSE activas — útil para métricas */
   getConnectionCount(): number {
     let total = 0;
     for (const set of this.connections.values()) {

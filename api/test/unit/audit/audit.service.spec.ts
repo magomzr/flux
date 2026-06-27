@@ -20,15 +20,13 @@ describe('AuditService', () => {
     jest.clearAllMocks();
   });
 
-  // ─── log ─────────────────────────────────────────────────────────────────────
-
   describe('log', () => {
     it('inserts audit entry with correct fields', async () => {
       const valuesMock = jest.fn().mockResolvedValue([]);
       mockDb.insert.mockReturnValue({ values: valuesMock });
 
       await service.log({
-        action: 'flag.created' as any,
+        action: 'flag.created',
         entityType: 'flag',
         entityId: 'flag-1',
         context: { userId: 'user-1', tenantId: 'tenant-1', ip: '127.0.0.1' },
@@ -53,7 +51,7 @@ describe('AuditService', () => {
       mockDb.insert.mockReturnValue({ values: valuesMock });
 
       await service.log({
-        action: 'project.updated' as any,
+        action: 'project.updated',
         entityType: 'project',
         entityId: 'proj-1',
         context: { userId: 'user-1', tenantId: 'tenant-1' },
@@ -73,7 +71,7 @@ describe('AuditService', () => {
       mockDb.insert.mockReturnValue({ values: valuesMock });
 
       await service.log({
-        action: 'tenant.deactivated' as any,
+        action: 'tenant.deactivated',
         entityType: 'tenant',
         entityId: 'tenant-1',
         context: { userId: 'user-1', tenantId: null },
@@ -89,7 +87,6 @@ describe('AuditService', () => {
         values: jest.fn().mockRejectedValue(new Error('DB connection lost')),
       });
 
-      // No debe lanzar
       await expect(
         service.log({
           action: 'flag.created' as any,
@@ -100,8 +97,6 @@ describe('AuditService', () => {
       ).resolves.toBeUndefined();
     });
   });
-
-  // ─── query ───────────────────────────────────────────────────────────────────
 
   describe('query', () => {
     const rawRows = [

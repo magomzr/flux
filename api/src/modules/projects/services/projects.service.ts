@@ -20,7 +20,10 @@ export class ProjectsService {
     private readonly audit: AuditService,
   ) {}
 
-  async create(dto: CreateProjectDto & { tenantId: string }, ctx: AuditContext) {
+  async create(
+    dto: CreateProjectDto & { tenantId: string },
+    ctx: AuditContext,
+  ) {
     const existing = await this.db.query.projects.findFirst({
       where: and(
         eq(projects.tenantId, dto.tenantId),
@@ -88,7 +91,10 @@ export class ProjectsService {
       entityType: 'project',
       entityId: id,
       context: ctx,
-      metadata: { before: { name: before.name, description: before.description }, after: dto },
+      metadata: {
+        before: { name: before.name, description: before.description },
+        after: dto,
+      },
     });
 
     return updated;

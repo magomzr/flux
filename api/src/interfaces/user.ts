@@ -3,9 +3,9 @@ export interface User {
   name: string;
   email: string;
   password: string;
-  role: string; // un solo rol
-  tenantId: string | null; // null = usuario interno tuyo (super_admin, ops)
-  isActive: boolean; // para deshabilitar sin borrar
+  role: string;
+  tenantId: string | null;
+  isActive: boolean;
   createdAt: Date;
   lastLoginAt: Date | null;
 }

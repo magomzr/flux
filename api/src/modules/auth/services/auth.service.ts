@@ -90,8 +90,6 @@ export class AuthService {
     }
   }
 
-  // ─── Privados ────────────────────────────────────────────────────────────────
-
   private signAccessToken(payload: {
     sub: string;
     name: string;
@@ -118,8 +116,6 @@ export class AuthService {
 
     return { raw, familyId: family };
   }
-
-  // ─── DB ───────────────────────────────────────────────────────────────────────
 
   private async saveRefreshToken(data: {
     userId: string;
@@ -178,7 +174,8 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('User not found');
 
     const match = await bcrypt.compare(dto.currentPassword, user.password);
-    if (!match) throw new UnauthorizedException('Current password is incorrect');
+    if (!match)
+      throw new UnauthorizedException('Current password is incorrect');
 
     const newHash = await bcrypt.hash(dto.newPassword, 10);
     await this.db

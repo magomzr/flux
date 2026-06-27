@@ -24,8 +24,6 @@ import { Perm } from '../../../common/config/roles.config';
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 
-  // ─── Plans (solo super_admin) ─────────────────────────────────────────────────
-
   @Post('plans')
   @RequirePerms(Perm.BILLING_WRITE)
   createPlan(@Body() dto: CreatePlanDto) {
@@ -44,15 +42,11 @@ export class BillingController {
     return this.billingService.findPlan(planId);
   }
 
-  // ─── Calculadora (pública dentro del dashboard) ───────────────────────────────
-
   @Get('billing/estimate')
   @RequirePerms(Perm.BILLING_READ)
   calculateCost(@Query() dto: CostEstimateDto) {
     return this.billingService.calculateCost(dto);
   }
-
-  // ─── Subscriptions por tenant ─────────────────────────────────────────────────
 
   @Post('tenants/:tenantId/billing/subscribe')
   @UseGuards(TenantGuard)
@@ -69,9 +63,7 @@ export class BillingController {
   @UseGuards(TenantGuard)
   @TenantResource({ param: 'tenantId' })
   @RequirePerms(Perm.BILLING_READ)
-  getActiveSubscription(
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
-  ) {
+  getActiveSubscription(@Param('tenantId', ParseUUIDPipe) tenantId: string) {
     return this.billingService.getActiveSubscription(tenantId);
   }
 
@@ -79,9 +71,7 @@ export class BillingController {
   @UseGuards(TenantGuard)
   @TenantResource({ param: 'tenantId' })
   @RequirePerms(Perm.BILLING_READ)
-  getSubscriptionHistory(
-    @Param('tenantId', ParseUUIDPipe) tenantId: string,
-  ) {
+  getSubscriptionHistory(@Param('tenantId', ParseUUIDPipe) tenantId: string) {
     return this.billingService.getSubscriptionHistory(tenantId);
   }
 

@@ -1,12 +1,8 @@
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { eq, and } from 'drizzle-orm';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { eq } from 'drizzle-orm';
 import { randomBytes } from 'crypto';
 import * as bcrypt from 'bcrypt';
-import { sdkApiKeys, environments, projects } from '../../../db/schema';
+import { sdkApiKeys, environments } from '../../../db/schema';
 import { ApiKeyCacheService } from '../../delivery/services/api-key-cache.service';
 import { AuditService } from '../../audit/services/audit.service';
 import { AuditAction } from '../../audit/audit.types';
@@ -22,13 +18,6 @@ export class SdkKeysService {
     private readonly audit: AuditService,
   ) {}
 
-  /**
-   * Genera una nueva SDK API key para un ambiente.
-   * La key raw se devuelve UNA SOLA VEZ — no se puede recuperar después.
-   *
-   * Formato: "flux_<envSlug>_<40hexchars>"
-   * Ejemplo: "flux_production_a3f9c2e1b4d8..."
-   */
   async create(environmentId: string, dto: CreateSdkKeyDto, ctx: AuditContext) {
     const environment = await this.db.query.environments.findFirst({
       where: eq(environments.id, environmentId),
@@ -39,7 +28,7 @@ export class SdkKeysService {
       throw new NotFoundException(`Environment ${environmentId} not found`);
     }
 
-    const rawSecret = randomBytes(20).toString('hex'); // 40 hex chars
+    const rawSecret = randomBytes(20).toString('hex');
     const prefix = `flux_${environment.slug}`;
     const rawKey = `${prefix}_${rawSecret}`;
     const keyHash = await bcrypt.hash(rawKey, 10);
@@ -70,7 +59,6 @@ export class SdkKeysService {
       metadata: { name: dto.name, prefix, environmentId },
     });
 
-    // Devolver la key raw solo en la respuesta de creación
     return { ...key, key: rawKey };
   }
 
@@ -85,7 +73,6 @@ export class SdkKeysService {
         lastUsedAt: true,
         expiresAt: true,
         createdAt: true,
-        // keyHash nunca se expone
       },
       orderBy: (k, { desc }) => desc(k.createdAt),
     });
@@ -104,7 +91,6 @@ export class SdkKeysService {
       .set({ isActive: false })
       .where(eq(sdkApiKeys.id, id));
 
-    // Invalidar cache para que el guard deje de aceptar esta key
     this.apiKeyCache.invalidate(key.keyPrefix);
 
     await this.audit.log({

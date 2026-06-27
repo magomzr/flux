@@ -20,7 +20,6 @@ import { TenantModule } from './common/tenant/tenant.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    // wildcard: false evita overhead de pattern matching en eventos
     EventEmitterModule.forRoot({ wildcard: false }),
     DbModule,
     TenantModule,

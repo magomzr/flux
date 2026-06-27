@@ -6,8 +6,6 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
 function buildContext(overrides: {
   role?: string;
   tenantId?: string | null;
@@ -30,18 +28,13 @@ function buildContext(overrides: {
         params,
       }),
     }),
-    // meta se inyecta via Reflector mock
     _meta: meta,
   } as unknown as ExecutionContext;
 }
 
-// ─── Mocks ────────────────────────────────────────────────────────────────────
-
 const mockResolver = {
   resolveTenantId: jest.fn(),
 };
-
-// ─── Suite ────────────────────────────────────────────────────────────────────
 
 describe('TenantGuard', () => {
   let guard: TenantGuard;
@@ -61,8 +54,6 @@ describe('TenantGuard', () => {
     jest.clearAllMocks();
   });
 
-  // ─── No metadata ─────────────────────────────────────────────────────────────
-
   it('passes when no TenantResource metadata is set', async () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue(null);
     const ctx = buildContext({});
@@ -70,8 +61,6 @@ describe('TenantGuard', () => {
     const result = await guard.canActivate(ctx);
     expect(result).toBe(true);
   });
-
-  // ─── Internal roles ──────────────────────────────────────────────────────────
 
   it('passes for super_admin regardless of tenant', async () => {
     jest
@@ -102,8 +91,6 @@ describe('TenantGuard', () => {
     expect(result).toBe(true);
   });
 
-  // ─── Direct tenantId param ───────────────────────────────────────────────────
-
   it('passes when tenantId param matches user tenantId', async () => {
     jest
       .spyOn(reflector, 'getAllAndOverride')
@@ -125,7 +112,7 @@ describe('TenantGuard', () => {
     const ctx = buildContext({
       role: 'tenant_admin',
       tenantId: 'tenant-1',
-      params: { tenantId: 'tenant-2' }, // diferente tenant
+      params: { tenantId: 'tenant-2' },
     });
 
     await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
@@ -137,14 +124,12 @@ describe('TenantGuard', () => {
       .mockReturnValue({ param: 'tenantId' });
     const ctx = buildContext({
       role: 'developer',
-      tenantId: null, // sin tenant
+      tenantId: null,
       params: { tenantId: 'tenant-1' },
     });
 
     await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
   });
-
-  // ─── Via resolver ─────────────────────────────────────────────────────────────
 
   it('passes when resolved tenantId matches user tenantId', async () => {
     jest.spyOn(reflector, 'getAllAndOverride').mockReturnValue({
@@ -172,7 +157,7 @@ describe('TenantGuard', () => {
       param: 'projectId',
       via: 'project',
     });
-    mockResolver.resolveTenantId.mockResolvedValue('tenant-2'); // otro tenant
+    mockResolver.resolveTenantId.mockResolvedValue('tenant-2');
 
     const ctx = buildContext({
       role: 'developer',
@@ -183,8 +168,6 @@ describe('TenantGuard', () => {
     await expect(guard.canActivate(ctx)).rejects.toThrow(ForbiddenException);
   });
 });
-
-// ─── PermissionsGuard ─────────────────────────────────────────────────────────
 
 import { TenantGuard } from '../../../src/common/guards/tenant.guard';
 import { TenantResolverService } from '../../../src/common/tenant/tenant-resolver.service';
@@ -240,7 +223,7 @@ describe('PermissionsGuard', () => {
       getHandler: () => ({}),
       getClass: () => ({}),
       switchToHttp: () => ({
-        getRequest: () => ({ user: {} }), // sin permissionSet
+        getRequest: () => ({ user: {} }),
       }),
     } as unknown as ExecutionContext;
 
