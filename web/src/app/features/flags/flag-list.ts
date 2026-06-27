@@ -1,20 +1,9 @@
-import {
-  Component,
-  inject,
-  signal,
-  computed,
-  OnInit,
-  input,
-} from "@angular/core";
+import { Component, inject, signal, computed, OnInit, input } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { FlagsService } from "../../core/api/flags.service";
 import { EnvironmentsService } from "../../core/api/environments.service";
 import { AuthService } from "../../core/auth/auth.service";
-import type {
-  Flag,
-  FlagValue,
-  Environment,
-} from "../../core/models/api.models";
+import type { Flag, FlagValue, Environment } from "../../core/models/api.models";
 
 interface FlagRow {
   flag: Flag;
@@ -36,15 +25,8 @@ interface EditingCell {
       <!-- Header -->
       <div class="flex items-center justify-between mb-6">
         <div>
-          <h2
-            class="text-base font-semibold"
-            style="color: var(--text-primary)"
-          >
-            Flags
-          </h2>
-          <p class="text-sm mt-0.5" style="color: var(--text-muted)">
-            {{ rows().length }} flags
-          </p>
+          <h2 class="text-base font-semibold" style="color: var(--text-primary)">Flags</h2>
+          <p class="text-sm mt-0.5" style="color: var(--text-muted)">{{ rows().length }} flags</p>
         </div>
         <button
           (click)="showForm.set(true)"
@@ -67,21 +49,10 @@ interface EditingCell {
           class="border rounded-xl p-5 mb-6"
           style="background-color: var(--bg-surface); border-color: var(--border)"
         >
-          <h3
-            class="text-sm font-medium mb-4"
-            style="color: var(--text-primary)"
-          >
-            New flag
-          </h3>
-          <form
-            [formGroup]="form"
-            (ngSubmit)="create()"
-            class="grid grid-cols-2 gap-4"
-          >
+          <h3 class="text-sm font-medium mb-4" style="color: var(--text-primary)">New flag</h3>
+          <form [formGroup]="form" (ngSubmit)="create()" class="grid grid-cols-2 gap-4">
             <div class="space-y-1">
-              <label
-                class="text-xs uppercase tracking-wider"
-                style="color: var(--text-muted)"
+              <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)"
                 >Key</label
               >
               <input
@@ -90,15 +61,11 @@ interface EditingCell {
                 class="w-full rounded-lg px-3 py-2 text-sm font-mono border focus:outline-none focus:ring-2 focus:border-transparent"
                 style="background-color: var(--input-bg); border-color: var(--input-border); color: var(--text-primary); --tw-ring-color: var(--input-focus)"
               />
-              <p class="text-xs" style="color: var(--text-muted)">
-                lowercase, underscores only
-              </p>
+              <p class="text-xs" style="color: var(--text-muted)">lowercase, underscores only</p>
             </div>
 
             <div class="space-y-1">
-              <label
-                class="text-xs uppercase tracking-wider"
-                style="color: var(--text-muted)"
+              <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)"
                 >Name</label
               >
               <input
@@ -110,9 +77,7 @@ interface EditingCell {
             </div>
 
             <div class="space-y-1">
-              <label
-                class="text-xs uppercase tracking-wider"
-                style="color: var(--text-muted)"
+              <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)"
                 >Type</label
               >
               <select
@@ -128,14 +93,9 @@ interface EditingCell {
             </div>
 
             <div class="space-y-1">
-              <label
-                class="text-xs uppercase tracking-wider"
-                style="color: var(--text-muted)"
-              >
+              <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">
                 Description
-                <span class="normal-case" style="color: var(--text-muted)"
-                  >(optional)</span
-                >
+                <span class="normal-case" style="color: var(--text-muted)">(optional)</span>
               </label>
               <input
                 formControlName="description"
@@ -191,9 +151,7 @@ interface EditingCell {
           class="text-center py-12 border border-dashed rounded-xl"
           style="border-color: var(--border)"
         >
-          <p class="text-sm" style="color: var(--text-muted)">
-            No environments yet.
-          </p>
+          <p class="text-sm" style="color: var(--text-muted)">No environments yet.</p>
           <p class="text-xs mt-1" style="color: var(--text-muted)">
             Go to the <strong>Environments</strong> tab to create at least one.
           </p>
@@ -215,10 +173,7 @@ interface EditingCell {
 
       <!-- Tabla de flags -->
       @if (!loading() && environments().length > 0 && rows().length > 0) {
-        <div
-          class="border rounded-xl overflow-x-auto"
-          style="border-color: var(--border)"
-        >
+        <div class="border rounded-xl overflow-x-auto" style="border-color: var(--border)">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b" style="border-color: var(--border)">
@@ -261,16 +216,10 @@ interface EditingCell {
                 >
                   <!-- Flag info -->
                   <td class="px-4 py-3">
-                    <p
-                      class="font-medium text-sm"
-                      style="color: var(--text-primary)"
-                    >
+                    <p class="font-medium text-sm" style="color: var(--text-primary)">
                       {{ row.flag.name }}
                     </p>
-                    <p
-                      class="font-mono text-xs mt-0.5"
-                      style="color: var(--text-muted)"
-                    >
+                    <p class="font-mono text-xs mt-0.5" style="color: var(--text-muted)">
                       {{ row.flag.key }}
                     </p>
                   </td>
@@ -296,31 +245,20 @@ interface EditingCell {
                               (click)="toggleFlag(row, env.id, fv)"
                               class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer"
                               [style.background-color]="
-                                fv.enabled
-                                  ? 'var(--accent)'
-                                  : 'var(--bg-elevated)'
+                                fv.enabled ? 'var(--accent)' : 'var(--bg-elevated)'
                               "
                               [title]="
-                                fv.enabled
-                                  ? 'Disable in ' + env.name
-                                  : 'Enable in ' + env.name
+                                fv.enabled ? 'Disable in ' + env.name : 'Enable in ' + env.name
                               "
                             >
                               <span
                                 class="inline-block h-3.5 w-3.5 rounded-full transition-transform"
-                                [class]="
-                                  fv.enabled ? 'translate-x-4' : 'translate-x-1'
-                                "
+                                [class]="fv.enabled ? 'translate-x-4' : 'translate-x-1'"
                                 style="background-color: #fff"
                               ></span>
                             </button>
                             @if (fv.publishedAt) {
-                              <p
-                                class="text-xs"
-                                style="color: var(--text-muted)"
-                              >
-                                published
-                              </p>
+                              <p class="text-xs" style="color: var(--text-muted)">published</p>
                             } @else {
                               <button
                                 (click)="publishFlag(row, env.id, fv)"
@@ -342,17 +280,13 @@ interface EditingCell {
                               (click)="toggleFlag(row, env.id, fv)"
                               class="relative inline-flex h-5 w-9 items-center rounded-full transition-colors cursor-pointer"
                               [style.background-color]="
-                                fv.enabled
-                                  ? 'var(--accent)'
-                                  : 'var(--bg-elevated)'
+                                fv.enabled ? 'var(--accent)' : 'var(--bg-elevated)'
                               "
                               [title]="fv.enabled ? 'Disable' : 'Enable'"
                             >
                               <span
                                 class="inline-block h-3.5 w-3.5 rounded-full transition-transform"
-                                [class]="
-                                  fv.enabled ? 'translate-x-4' : 'translate-x-1'
-                                "
+                                [class]="fv.enabled ? 'translate-x-4' : 'translate-x-1'"
                                 style="background-color: #fff"
                               ></span>
                             </button>
@@ -362,9 +296,7 @@ interface EditingCell {
                               <div class="flex items-center gap-1 mt-1">
                                 <input
                                   [value]="editingCell()!.currentValue"
-                                  (input)="
-                                    updateEditValue($any($event.target).value)
-                                  "
+                                  (input)="updateEditValue($any($event.target).value)"
                                   (keydown.enter)="saveValue(row, env.id, fv)"
                                   (keydown.escape)="cancelEdit()"
                                   class="w-24 rounded px-1.5 py-0.5 text-xs font-mono border focus:outline-none"
@@ -388,9 +320,7 @@ interface EditingCell {
                               </div>
                             } @else {
                               <button
-                                (click)="
-                                  startEdit(row.flag.id, env.id, fv.value ?? '')
-                                "
+                                (click)="startEdit(row.flag.id, env.id, fv.value ?? '')"
                                 class="text-xs font-mono px-1.5 py-0.5 rounded transition-colors cursor-pointer max-w-28 truncate"
                                 style="color: var(--text-secondary); background-color: var(--bg-elevated)"
                                 [title]="fv.value ?? 'click to set value'"
@@ -406,12 +336,7 @@ interface EditingCell {
                             }
 
                             @if (fv.publishedAt) {
-                              <p
-                                class="text-xs"
-                                style="color: var(--text-muted)"
-                              >
-                                published
-                              </p>
+                              <p class="text-xs" style="color: var(--text-muted)">published</p>
                             } @else {
                               <button
                                 (click)="publishFlag(row, env.id, fv)"
@@ -425,9 +350,7 @@ interface EditingCell {
                           </div>
                         }
                       } @else {
-                        <span class="text-xs" style="color: var(--text-muted)"
-                          >—</span
-                        >
+                        <span class="text-xs" style="color: var(--text-muted)">—</span>
                       }
                     </td>
                   }
@@ -449,7 +372,7 @@ interface EditingCell {
                       <button
                         (click)="confirmDelete(row.flag)"
                         class="transition-colors cursor-pointer text-xs"
-                        style="color: var(--text-muted)"
+                        style="color: var(--danger-fg)"
                       >
                         Delete
                       </button>
@@ -472,19 +395,12 @@ interface EditingCell {
             class="border rounded-xl p-6 max-w-sm w-full"
             style="background-color: var(--bg-surface); border-color: var(--border)"
           >
-            <h3
-              class="text-sm font-medium mb-2"
-              style="color: var(--text-primary)"
-            >
-              Delete flag
-            </h3>
+            <h3 class="text-sm font-medium mb-2" style="color: var(--text-primary)">Delete flag</h3>
             <p class="text-sm mb-5" style="color: var(--text-secondary)">
               This will permanently delete
-              <span
-                class="font-mono text-xs"
-                style="color: var(--text-primary)"
-                >{{ deletingFlag()!.key }}</span
-              >
+              <span class="font-mono text-xs" style="color: var(--text-primary)">{{
+                deletingFlag()!.key
+              }}</span>
               across all environments.
             </p>
             <div class="flex justify-end gap-2">
@@ -529,10 +445,7 @@ export class FlagList implements OnInit {
   readonly canPublish = computed(() => this.auth.hasPermission("publish:flag"));
 
   readonly form = this.fb.nonNullable.group({
-    key: [
-      "",
-      [Validators.required, Validators.pattern(/^[a-z0-9]+(?:_[a-z0-9]+)*$/)],
-    ],
+    key: ["", [Validators.required, Validators.pattern(/^[a-z0-9]+(?:_[a-z0-9]+)*$/)]],
     name: ["", Validators.required],
     type: ["boolean"],
     description: [""],
@@ -712,34 +625,10 @@ export class FlagList implements OnInit {
 
   publishAllDrafts(row: FlagRow) {
     const projectId = this.projectId();
-    const drafts = Object.entries(row.values).filter(
-      ([, fv]) => !fv.publishedAt,
-    );
+    const drafts = Object.entries(row.values).filter(([, fv]) => !fv.publishedAt);
 
     for (const [environmentId, fv] of drafts) {
-      this.flagsService
-        .publishFlagValue(projectId, row.flag.id, environmentId)
-        .subscribe({
-          next: (updated) => {
-            this.rows.update((rows) =>
-              rows.map((r) =>
-                r.flag.id !== row.flag.id
-                  ? r
-                  : {
-                      ...r,
-                      values: { ...r.values, [environmentId]: updated },
-                    },
-              ),
-            );
-          },
-        });
-    }
-  }
-
-  publishFlag(row: FlagRow, environmentId: string, fv: FlagValue) {
-    this.flagsService
-      .publishFlagValue(this.projectId(), row.flag.id, environmentId)
-      .subscribe({
+      this.flagsService.publishFlagValue(projectId, row.flag.id, environmentId).subscribe({
         next: (updated) => {
           this.rows.update((rows) =>
             rows.map((r) =>
@@ -753,6 +642,24 @@ export class FlagList implements OnInit {
           );
         },
       });
+    }
+  }
+
+  publishFlag(row: FlagRow, environmentId: string, fv: FlagValue) {
+    this.flagsService.publishFlagValue(this.projectId(), row.flag.id, environmentId).subscribe({
+      next: (updated) => {
+        this.rows.update((rows) =>
+          rows.map((r) =>
+            r.flag.id !== row.flag.id
+              ? r
+              : {
+                  ...r,
+                  values: { ...r.values, [environmentId]: updated },
+                },
+          ),
+        );
+      },
+    });
   }
 
   // ─── Create ───────────────────────────────────────────────────────────────
@@ -781,9 +688,7 @@ export class FlagList implements OnInit {
         },
         error: (err) => {
           this.formError.set(
-            err.status === 409
-              ? "Key already exists in this project."
-              : "Something went wrong.",
+            err.status === 409 ? "Key already exists in this project." : "Something went wrong.",
           );
           this.saving.set(false);
         },
