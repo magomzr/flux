@@ -4,13 +4,13 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'api/**'
-      - '.github/workflows/api-tests.yml'
+      - "api/**"
+      - ".github/workflows/api-tests.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - 'api/**'
-      - '.github/workflows/api-tests.yml'
+      - "api/**"
+      - ".github/workflows/api-tests.yml"
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -31,12 +31,12 @@ jobs:
       - name: Setup Node.js 24
         uses: actions/setup-node@v4
         with:
-          node-version: '24.15.0'
+          node-version: "24.15.0"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: '11.0.8'
+          version: "11.10.0"
 
       - name: Get pnpm store path
         id: pnpm-cache

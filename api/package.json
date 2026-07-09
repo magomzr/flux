@@ -4,7 +4,7 @@
   "description": "App server for controlling and managing feature flags for tenants",
   "author": "Mario Gomez",
   "private": true,
-  "packageManager": "pnpm@11.0.8",
+  "packageManager": "pnpm@11.10.0",
   "license": "UNLICENSED",
   "scripts": {
     "build": "nest build",
