@@ -8,7 +8,6 @@ import { and, desc, eq, isNull, or, gt } from 'drizzle-orm';
 import { plans, tenantSubscriptions, usageRecords } from '../../../db/schema';
 import { CreatePlanDto } from '../dto/create-plan.dto';
 import { SubscribeDto } from '../dto/subscribe.dto';
-import type { CostEstimateDto } from '../dto/cost-estimate.dto';
 import type { Db } from '../../../db';
 
 const OVERAGE = {
@@ -209,55 +208,6 @@ export class BillingService {
     return this.db.query.usageRecords.findMany({
       where: eq(usageRecords.tenantId, tenantId),
       orderBy: desc(usageRecords.periodStart),
-    });
-  }
-
-  async calculateCost(dto: CostEstimateDto) {
-    const allPlans = await this.findAllPlans();
-
-    return allPlans.map((plan) => {
-      const baseCostUsd = plan.priceUsd / 100;
-      let overageCostUsd = 0;
-      const breakdown: Record<string, number> = {};
-
-      const evalUsage = dto.evaluationsMonth ?? 0;
-      if (
-        !FLAT_RATE_PLANS.has(plan.id) &&
-        plan.maxEvaluationsMonth !== null &&
-        evalUsage > plan.maxEvaluationsMonth
-      ) {
-        const extra = evalUsage - plan.maxEvaluationsMonth;
-        const cost = Math.ceil(extra / 1000) * (OVERAGE.evaluationsPer1k / 100);
-        overageCostUsd += cost;
-        breakdown['evaluations_overage_usd'] = cost;
-      }
-
-      const sseUsage = dto.sseConnectionsMax ?? 0;
-      if (!plan.hasSse && sseUsage > 0) {
-        breakdown['sse_not_available'] = 0;
-      }
-
-      const storageUsage = dto.assetStorageMb ?? 0;
-      if (
-        !FLAT_RATE_PLANS.has(plan.id) &&
-        plan.maxAssetStorageMb !== null &&
-        storageUsage > plan.maxAssetStorageMb
-      ) {
-        const extra = storageUsage - plan.maxAssetStorageMb;
-        const cost = extra * (OVERAGE.storageMbPerMonth / 100);
-        overageCostUsd += cost;
-        breakdown['storage_overage_usd'] = cost;
-      }
-
-      return {
-        planId: plan.id,
-        planName: plan.name,
-        baseCostUsd,
-        overageCostUsd: Math.round(overageCostUsd * 100) / 100,
-        totalCostUsd: Math.round((baseCostUsd + overageCostUsd) * 100) / 100,
-        hasSse: plan.hasSse,
-        breakdown,
-      };
     });
   }
 }

@@ -1,0 +1,243 @@
+<div>
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h2 class="text-base font-semibold" style="color: var(--text-primary)">Ambientes</h2>
+      <p class="text-sm mt-0.5" style="color: var(--text-muted)">
+        {{ environments().length }} ambientes
+      </p>
+    </div>
+    <button
+      (click)="showForm.set(true)"
+      class="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+      style="background-color: var(--accent); color: var(--accent-fg)"
+    >
+      + Nuevo ambiente
+    </button>
+  </div>
+
+  <!-- Create form -->
+  @if (showForm()) {
+  <div
+    class="border rounded-xl p-5 mb-6"
+    style="background-color: var(--bg-surface); border-color: var(--border)"
+  >
+    <h3 class="text-sm font-medium mb-4" style="color: var(--text-primary)">Nuevo ambiente</h3>
+    <form [formGroup]="form" (ngSubmit)="create()" class="space-y-4">
+      <div class="grid grid-cols-2 gap-4">
+        <div class="space-y-1">
+          <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)"
+            >Nombre</label
+          >
+          <input
+            formControlName="name"
+            placeholder="Producción"
+            class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+            style="
+              background-color: var(--input-bg);
+              border-color: var(--input-border);
+              color: var(--text-primary);
+              --tw-ring-color: var(--input-focus);
+            "
+          />
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)"
+            >Slug</label
+          >
+          <input
+            formControlName="slug"
+            placeholder="production"
+            class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+            style="
+              background-color: var(--input-bg);
+              border-color: var(--input-border);
+              color: var(--text-primary);
+              --tw-ring-color: var(--input-focus);
+            "
+          />
+        </div>
+      </div>
+
+      <!-- Color picker -->
+      <div class="space-y-2">
+        <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)"
+          >Color</label
+        >
+        <div class="flex items-center gap-2">
+          @for (preset of presetColors; track preset.color) {
+          <button
+            type="button"
+            (click)="form.patchValue({ color: preset.color })"
+            [title]="preset.label"
+            class="w-6 h-6 rounded-full border-2 transition-all cursor-pointer"
+            [style.background-color]="preset.color"
+            [style.border-color]="
+                      form.value.color === preset.color ? 'var(--accent)' : 'transparent'
+                    "
+            [style.boxShadow]="
+                      form.value.color === preset.color ? '0 0 0 3px rgba(59,130,246,0.35)' : 'none'
+                    "
+          ></button>
+          }
+          <input
+            formControlName="color"
+            placeholder="#6366f1"
+            class="w-28 rounded-lg px-3 py-1.5 text-xs font-mono border focus:outline-none focus:ring-2 focus:border-transparent"
+            style="
+              background-color: var(--input-bg);
+              border-color: var(--input-border);
+              color: var(--text-primary);
+              --tw-ring-color: var(--input-focus);
+            "
+          />
+        </div>
+      </div>
+
+      @if (formError()) {
+      <p
+        class="text-xs rounded-lg px-3 py-2"
+        style="
+          color: var(--danger-fg);
+          background-color: var(--danger-subtle);
+          border: 1px solid var(--danger-fg);
+        "
+      >
+        {{ formError() }}
+      </p>
+      }
+
+      <div class="flex justify-end gap-2">
+        <button
+          type="button"
+          (click)="cancelForm()"
+          class="text-sm px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          style="color: var(--text-secondary)"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="form.invalid || saving()"
+          class="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          style="background-color: var(--accent); color: var(--accent-fg)"
+        >
+          {{ saving() ? "Creando..." : "Crear ambiente" }}
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+  <div class="space-y-3">
+    @for (_ of [1, 2, 3]; track $index) {
+    <div class="h-20 rounded-xl animate-pulse skeleton"></div>
+    }
+  </div>
+  }
+
+  <!-- Empty -->
+  @if (!loading() && environments().length === 0) {
+  <div
+    class="text-center py-12 border border-dashed rounded-xl"
+    style="border-color: var(--border)"
+  >
+    <p class="text-sm" style="color: var(--text-muted)">No hay ambientes aún.</p>
+    <p class="text-xs mt-1" style="color: var(--text-muted)">
+      Crea al menos un ambiente para administrar flags.
+    </p>
+  </div>
+  }
+
+  <!-- Lista -->
+  @if (!loading() && environments().length > 0) {
+  <div class="space-y-3">
+    @for (env of environments(); track env.id) {
+    <div
+      class="border rounded-xl px-4 py-3 flex items-center gap-4"
+      style="background-color: var(--bg-surface); border-color: var(--border)"
+    >
+      <!-- Color dot -->
+      <div
+        class="w-3 h-3 rounded-full flex-shrink-0"
+        [style.background-color]="env.color ?? '#52525b'"
+      ></div>
+
+      <!-- Info -->
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          <p class="text-sm font-medium" style="color: var(--text-primary)">{{ env.name }}</p>
+          @if (env.isDefault) {
+          <span
+            class="text-xs px-1.5 py-0.5 rounded"
+            style="color: var(--text-muted); background-color: var(--bg-elevated)"
+            >default</span
+          >
+          }
+        </div>
+        <p class="text-xs font-mono mt-0.5" style="color: var(--text-muted)">{{ env.slug }}</p>
+      </div>
+
+      <!-- ID para copiar -->
+      <div class="text-right">
+        <p class="text-xs font-mono" style="color: var(--text-muted)">
+          {{ env.id.slice(0, 8) }}...
+        </p>
+        <p class="text-xs mt-0.5" style="color: var(--text-muted)">
+          {{ env.createdAt | date: "MMM d, y" }}
+        </p>
+      </div>
+
+      <!-- Acciones -->
+      <button
+        (click)="confirmDelete(env)"
+        class="transition-colors cursor-pointer text-xs ml-2"
+        style="color: var(--danger-fg)"
+      >
+        Eliminar
+      </button>
+    </div>
+    }
+  </div>
+  }
+
+  <!-- Delete confirm -->
+  @if (deletingEnv()) {
+  <div
+    class="fixed inset-0 flex items-center justify-center z-50 px-4"
+    style="background-color: var(--bg-overlay)"
+  >
+    <div
+      class="border rounded-xl p-6 max-w-sm w-full"
+      style="background-color: var(--bg-surface); border-color: var(--border)"
+    >
+      <h3 class="text-sm font-medium mb-2" style="color: var(--text-primary)">Eliminar ambiente</h3>
+      <p class="text-sm mb-5" style="color: var(--text-secondary)">
+        Esto eliminará permanentemente
+        <span class="font-medium" style="color: var(--text-primary)"
+          >{{ deletingEnv()!.name }}</span
+        >
+        y todas sus flags y SDK keys.
+      </p>
+      <div class="flex justify-end gap-2">
+        <button
+          (click)="deletingEnv.set(null)"
+          class="text-sm px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          style="color: var(--text-secondary)"
+        >
+          Cancelar
+        </button>
+        <button
+          (click)="deleteEnv()"
+          class="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          style="background-color: var(--danger); color: #fff"
+        >
+          Eliminar permanentemente
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

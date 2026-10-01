@@ -1,0 +1,157 @@
+<div class="p-6 max-w-4xl mx-auto space-y-8">
+  <div>
+    <h1 class="text-lg font-semibold" style="color: var(--text-primary)">Facturación</h1>
+    <p class="text-sm mt-0.5" style="color: var(--text-muted)">
+      Uso, plan y pronóstico de costos para este mes.
+    </p>
+  </div>
+
+  <!-- ─── Plan activo + uso ──────────────────────────────────────────────── -->
+  @if (usage()) {
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Plan -->
+    <div
+      class="border rounded-xl p-4"
+      style="background-color: var(--bg-surface); border-color: var(--border)"
+    >
+      <p class="text-xs uppercase tracking-wider mb-3" style="color: var(--text-muted)">
+        Plan actual
+      </p>
+      @if (usage()!.plan) {
+      <p class="text-xl font-semibold" style="color: var(--text-primary)">
+        {{ usage()!.plan!.name }}
+      </p>
+      <p class="text-sm mt-1" style="color: var(--text-secondary)">
+        {{ usage()!.plan!.baseCostUsd | currency:'USD':'symbol':'1.0-0' }}/mes base
+      </p>
+      } @else {
+      <p class="text-sm" style="color: var(--text-muted)">No tienes un plan activo</p>
+      }
+    </div>
+
+    <!-- Costo -->
+    <div
+      class="border rounded-xl p-4"
+      style="background-color: var(--bg-surface); border-color: var(--border)"
+    >
+      <p class="text-xs uppercase tracking-wider mb-3" style="color: var(--text-muted)">Costo</p>
+      <p class="text-xl font-semibold" style="color: var(--text-primary)">
+        {{ currentCost() | currency:'USD':'symbol':'1.2-2' }}
+      </p>
+      <p class="text-xs mt-0.5" style="color: var(--text-muted)">en lo que va del mes</p>
+      <div class="mt-3 pt-3 border-t" style="border-color: var(--border)">
+        <p
+          class="text-sm font-medium"
+          [style.color]="evalOverage() ? 'var(--warning-fg)' : 'var(--text-secondary)'"
+        >
+          {{ usage()!.cost.totalCostUsd | currency:'USD':'symbol':'1.2-2' }}
+        </p>
+        <p class="text-xs mt-0.5" style="color: var(--text-muted)">
+          estimado a fin de mes @if (evalOverage()) { ·
+          <span style="color: var(--warning-fg)"
+            >+{{ usage()!.cost.overageCostUsd | currency:'USD':'symbol':'1.2-2' }} de exceso</span
+          >
+          }
+        </p>
+      </div>
+    </div>
+
+    <!-- Período -->
+    <div
+      class="border rounded-xl p-4"
+      style="background-color: var(--bg-surface); border-color: var(--border)"
+    >
+      <p class="text-xs uppercase tracking-wider mb-3" style="color: var(--text-muted)">Periodo</p>
+      <p class="text-xl font-semibold" style="color: var(--text-primary)">
+        {{ usage()!.period.percentElapsed }}%
+      </p>
+      <p class="text-xs mt-0.5" style="color: var(--text-muted)">
+        Día {{ usage()!.period.dayOfMonth }} de {{ usage()!.period.daysInMonth }}
+      </p>
+      <div
+        class="mt-3 h-1.5 rounded-full overflow-hidden"
+        style="background-color: var(--bg-elevated)"
+      >
+        <div
+          class="h-full rounded-full transition-all"
+          style="background-color: var(--accent)"
+          [style.width.%]="usage()!.period.percentElapsed"
+        ></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Uso detallado -->
+  <div
+    class="border rounded-xl p-5"
+    style="background-color: var(--bg-surface); border-color: var(--border)"
+  >
+    <h2 class="text-sm font-medium mb-4" style="color: var(--text-primary)">Uso detallado</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Evaluaciones -->
+      <div>
+        <p class="text-xs mb-2" style="color: var(--text-muted)">Evaluaciones</p>
+        <p class="text-lg font-semibold" style="color: var(--text-primary)">
+          {{ usage()!.actual.evaluationsCount | number }}
+        </p>
+        <p class="text-xs mt-0.5" style="color: var(--text-muted)">en lo que va del mes</p>
+        <div
+          class="mt-2 h-1 rounded-full overflow-hidden"
+          style="background-color: var(--bg-elevated)"
+        >
+          <div
+            class="h-full rounded-full transition-all"
+            [style.background-color]="evalOverage() ? 'var(--warning-fg)' : 'var(--accent)'"
+            [style.width.%]="evalPct()"
+          ></div>
+        </div>
+        <div class="mt-2 pt-2 border-t" style="border-color: var(--border-subtle)">
+          <p
+            class="text-sm font-medium"
+            [style.color]="evalOverage() ? 'var(--warning-fg)' : 'var(--text-secondary)'"
+          >
+            {{ usage()!.projected.evaluationsCount | number }}
+          </p>
+          <p class="text-xs mt-0.5" style="color: var(--text-muted)">
+            estimado a fin de mes @if (evalOverage()) { ·
+            <span style="color: var(--warning-fg)">
+              +{{ evalOverageCount() | number }} over limit
+            </span>
+            }
+          </p>
+        </div>
+      </div>
+
+      <!-- Storage -->
+      <div>
+        <p class="text-xs mb-2" style="color: var(--text-muted)">Almacenamiento</p>
+        <p class="text-lg font-semibold" style="color: var(--text-primary)">
+          {{ usage()!.actual.assetStorageMb | number }} MB
+        </p>
+        <p class="text-xs mt-0.5" style="color: var(--text-muted)">en lo que va del mes</p>
+        <div class="mt-2 pt-2 border-t" style="border-color: var(--border-subtle)">
+          <p class="text-sm font-medium" style="color: var(--text-secondary)">
+            {{ usage()!.projected.assetStorageMb | number }} MB
+          </p>
+          <p class="text-xs mt-0.5" style="color: var(--text-muted)">estimado a fin de mes</p>
+        </div>
+      </div>
+
+      <!-- SSE -->
+      <div>
+        <p class="text-xs mb-2" style="color: var(--text-muted)">conexiones SSE (pico)</p>
+        <p class="text-lg font-semibold" style="color: var(--text-primary)">
+          {{ usage()!.actual.sseConnectionsMax | number }}
+        </p>
+        <p class="text-xs mt-0.5" style="color: var(--text-muted)">máx. concurrentes este mes</p>
+      </div>
+    </div>
+  </div>
+  } @if (loadingUsage()) {
+  <div class="grid grid-cols-3 gap-4">
+    @for (_ of [1,2,3]; track $index) {
+    <div class="h-24 rounded-xl animate-pulse skeleton"></div>
+    }
+  </div>
+  }
+</div>

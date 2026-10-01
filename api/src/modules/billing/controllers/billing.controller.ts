@@ -42,12 +42,6 @@ export class BillingController {
     return this.billingService.findPlan(planId);
   }
 
-  @Get('billing/estimate')
-  @RequirePerms(Perm.BILLING_READ)
-  calculateCost(@Query() dto: CostEstimateDto) {
-    return this.billingService.calculateCost(dto);
-  }
-
   @Post('tenants/:tenantId/billing/subscribe')
   @UseGuards(TenantGuard)
   @TenantResource({ param: 'tenantId' })

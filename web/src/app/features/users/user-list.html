@@ -1,0 +1,399 @@
+<div class="p-6 max-w-5xl mx-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-lg font-semibold" style="color: var(--text-primary)">Equipo</h1>
+      <p class="text-sm mt-0.5" style="color: var(--text-muted)">{{ users().length }} miembros</p>
+    </div>
+    <button
+      (click)="showForm.set(true)"
+      class="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+      style="background-color: var(--accent); color: var(--accent-fg)"
+    >
+      Agregar miembro
+    </button>
+  </div>
+
+  <!-- Create form -->
+  @if (showForm()) {
+  <div
+    class="border rounded-xl p-5 mb-6"
+    style="background-color: var(--bg-surface); border-color: var(--border)"
+  >
+    <h2 class="text-sm font-medium mb-4" style="color: var(--text-primary)">Nuevo miembro</h2>
+    <form [formGroup]="form" (ngSubmit)="create()" class="grid grid-cols-2 gap-4">
+      <div class="space-y-1">
+        <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)"
+          >Nombre</label
+        >
+        <input
+          formControlName="name"
+          placeholder="Jane Smith"
+          class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+          style="
+            background-color: var(--input-bg);
+            border-color: var(--input-border);
+            color: var(--text-primary);
+            --tw-ring-color: var(--input-focus);
+          "
+        />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)"
+          >Correo electrónico</label
+        >
+        <input
+          formControlName="email"
+          type="email"
+          placeholder="jane@company.com"
+          class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+          style="
+            background-color: var(--input-bg);
+            border-color: var(--input-border);
+            color: var(--text-primary);
+            --tw-ring-color: var(--input-focus);
+          "
+        />
+      </div>
+
+      <div class="space-y-1">
+        <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">Rol</label>
+        <select
+          formControlName="role"
+          class="w-full rounded-lg px-3 py-2 text-sm border focus:outline-none focus:ring-2 focus:border-transparent"
+          style="
+            background-color: var(--input-bg);
+            border-color: var(--input-border);
+            color: var(--text-primary);
+            --tw-ring-color: var(--input-focus);
+          "
+        >
+          @for (r of roles; track r.value) {
+          <option [value]="r.value">{{ r.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Password con generate -->
+      <div class="space-y-1">
+        <label class="text-xs uppercase tracking-wider" style="color: var(--text-muted)">
+          Contraseña temporal
+        </label>
+        <div class="flex gap-2">
+          <input
+            formControlName="password"
+            type="text"
+            placeholder="Mín. 8 caracteres"
+            class="flex-1 rounded-lg px-3 py-2 text-sm border font-mono focus:outline-none focus:ring-2 focus:border-transparent"
+            style="
+              background-color: var(--input-bg);
+              border-color: var(--input-border);
+              color: var(--text-primary);
+              --tw-ring-color: var(--input-focus);
+            "
+          />
+          <button
+            type="button"
+            (click)="fillGeneratedPassword()"
+            class="text-xs px-3 py-2 rounded-lg border transition-colors cursor-pointer whitespace-nowrap"
+            style="
+              border-color: var(--border);
+              color: var(--text-secondary);
+              background-color: var(--bg-elevated);
+            "
+            title="Generar Contraseña segura"
+          >
+            Generar
+          </button>
+        </div>
+      </div>
+
+      @if (formError()) {
+      <p
+        class="col-span-2 text-xs rounded-lg px-3 py-2"
+        style="
+          color: var(--danger-fg);
+          background-color: var(--danger-subtle);
+          border: 1px solid var(--danger-fg);
+        "
+      >
+        {{ formError() }}
+      </p>
+      }
+
+      <div class="col-span-2 flex justify-end gap-2">
+        <button
+          type="button"
+          (click)="cancelForm()"
+          class="text-sm px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          style="color: var(--text-secondary)"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          [disabled]="form.invalid || saving()"
+          class="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          style="background-color: var(--accent); color: var(--accent-fg)"
+        >
+          {{ saving() ? "Creando..." : "Crear miembro" }}
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+
+  <!-- Loading -->
+  @if (loading()) {
+  <div class="space-y-2">
+    @for (_ of [1, 2, 3]; track $index) {
+    <div class="h-16 rounded-xl animate-pulse skeleton"></div>
+    }
+  </div>
+  }
+
+  <!-- Empty -->
+  @if (!loading() && users().length === 0) {
+  <div
+    class="text-center py-16 border border-dashed rounded-xl"
+    style="border-color: var(--border)"
+  >
+    <p class="text-sm" style="color: var(--text-muted)">No hay miembros en el equipo aún.</p>
+  </div>
+  }
+
+  <!-- Table -->
+  @if (!loading() && users().length > 0) {
+  <div class="border rounded-xl overflow-hidden" style="border-color: var(--border)">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b" style="border-color: var(--border)">
+          <th
+            class="text-left text-xs uppercase tracking-wider px-4 py-3 font-medium"
+            style="color: var(--text-muted)"
+          >
+            Miembro
+          </th>
+          <th
+            class="text-left text-xs uppercase tracking-wider px-4 py-3 font-medium"
+            style="color: var(--text-muted)"
+          >
+            Rol
+          </th>
+          <th
+            class="text-left text-xs uppercase tracking-wider px-4 py-3 font-medium hidden md:table-cell"
+            style="color: var(--text-muted)"
+          >
+            Último ingreso
+          </th>
+          <th
+            class="text-left text-xs uppercase tracking-wider px-4 py-3 font-medium"
+            style="color: var(--text-muted)"
+          >
+            Estado
+          </th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (user of users(); track user.id) {
+        <tr
+          class="border-b last:border-0 transition-colors"
+          style="border-color: var(--table-border)"
+        >
+          <td class="px-4 py-3">
+            <p class="font-medium text-sm" style="color: var(--text-primary)">{{ user.name }}</p>
+            <p class="text-xs mt-0.5" style="color: var(--text-muted)">{{ user.email }}</p>
+          </td>
+
+          <td class="px-4 py-3">
+            <span
+              class="text-xs px-2 py-0.5 rounded-full font-medium"
+              [style]="roleBadge(user.role)"
+            >
+              {{ roleLabel(user.role) }}
+            </span>
+          </td>
+
+          <td class="px-4 py-3 hidden md:table-cell">
+            <p class="text-xs" style="color: var(--text-muted)">
+              {{ user.lastLoginAt ? (user.lastLoginAt | date: "MMM d, y") : "Nunca" }}
+            </p>
+          </td>
+
+          <td class="px-4 py-3">
+            @if (user.isActive) {
+            <span class="inline-flex items-center gap-1.5 text-xs" style="color: var(--success-fg)">
+              <span
+                class="w-1.5 h-1.5 rounded-full"
+                style="background-color: var(--success-fg)"
+              ></span>
+              Activo
+            </span>
+            } @else {
+            <span class="inline-flex items-center gap-1.5 text-xs" style="color: var(--text-muted)">
+              <span
+                class="w-1.5 h-1.5 rounded-full"
+                style="background-color: var(--text-muted)"
+              ></span>
+              Inactivo
+            </span>
+            }
+          </td>
+
+          <td class="px-4 py-3">
+            <div class="flex items-center justify-end gap-3">
+              <button
+                (click)="openResetPassword(user)"
+                class="text-xs transition-colors cursor-pointer"
+                style="color: var(--text-muted)"
+              >
+                Resetear contraseña
+              </button>
+              @if (user.isActive) {
+              <button
+                (click)="toggleActive(user)"
+                class="text-xs transition-colors cursor-pointer"
+                style="color: var(--danger-fg)"
+              >
+                Desactivar
+              </button>
+              } @else {
+              <button
+                (click)="toggleActive(user)"
+                class="text-xs transition-colors cursor-pointer"
+                style="color: var(--accent-text)"
+              >
+                Activar
+              </button>
+              }
+              <button
+                (click)="confirmDelete(user)"
+                class="text-xs transition-colors cursor-pointer"
+                style="color: var(--danger-fg)"
+              >
+                Eliminar
+              </button>
+            </div>
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+  }
+
+  <!-- Reset password modal -->
+  @if (resettingUser()) {
+  <div
+    class="fixed inset-0 flex items-center justify-center z-50 px-4"
+    style="background-color: var(--bg-overlay)"
+  >
+    <div
+      class="border rounded-xl p-6 max-w-sm w-full"
+      style="background-color: var(--bg-surface); border-color: var(--border)"
+    >
+      <h3 class="text-sm font-medium mb-1" style="color: var(--text-primary)">
+        Resetear contraseña
+      </h3>
+      <p class="text-xs mb-4" style="color: var(--text-muted)">
+        Establece una nueva contraseña temporal para
+        <span class="font-medium" style="color: var(--text-primary)"
+          >{{ resettingUser()!.name }}</span
+        >. Compártela de forma segura. Debe cambiarse después.
+      </p>
+
+      <div class="space-y-3">
+        <div class="flex gap-2">
+          <input
+            [value]="resetPassword()"
+            (input)="resetPassword.set($any($event.target).value)"
+            type="text"
+            placeholder="New password"
+            class="flex-1 rounded-lg px-3 py-2 text-sm border font-mono focus:outline-none focus:ring-2 focus:border-transparent"
+            style="
+              background-color: var(--input-bg);
+              border-color: var(--input-border);
+              color: var(--text-primary);
+              --tw-ring-color: var(--input-focus);
+            "
+          />
+          <button
+            type="button"
+            (click)="generateResetPassword()"
+            class="text-xs px-3 py-2 rounded-lg border transition-colors cursor-pointer whitespace-nowrap"
+            style="
+              border-color: var(--border);
+              color: var(--text-secondary);
+              background-color: var(--bg-elevated);
+            "
+          >
+            Generar
+          </button>
+        </div>
+
+        @if (resetPassword().length > 0 && resetPassword().length < 8) {
+        <p class="text-xs" style="color: var(--warning-fg)">Mín. 8 caracteres</p>
+        }
+      </div>
+
+      <div class="flex justify-end gap-2 mt-5">
+        <button
+          (click)="cancelReset()"
+          class="text-sm px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          style="color: var(--text-secondary)"
+        >
+          Cancelar
+        </button>
+        <button
+          (click)="confirmReset()"
+          [disabled]="resetPassword().length < 8 || resetting()"
+          class="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          style="background-color: var(--accent); color: var(--accent-fg)"
+        >
+          {{ resetting() ? "Guardando..." : "Establecer contraseña" }}
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Delete confirm -->
+  @if (deletingUser()) {
+  <div
+    class="fixed inset-0 flex items-center justify-center z-50 px-4"
+    style="background-color: var(--bg-overlay)"
+  >
+    <div
+      class="border rounded-xl p-6 max-w-sm w-full"
+      style="background-color: var(--bg-surface); border-color: var(--border)"
+    >
+      <h3 class="text-sm font-medium mb-2" style="color: var(--text-primary)">Eliminar miembro</h3>
+      <p class="text-sm mb-5" style="color: var(--text-secondary)">
+        ¿Quieres eliminar a
+        <span class="font-medium" style="color: var(--text-primary)"
+          >{{ deletingUser()!.name }}</span
+        >
+        de este equpo? Perderá acceso inmediatamente.
+      </p>
+      <div class="flex justify-end gap-2">
+        <button
+          (click)="deletingUser.set(null)"
+          class="text-sm px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          style="color: var(--text-secondary)"
+        >
+          Cancelar
+        </button>
+        <button
+          (click)="deleteUser()"
+          class="text-sm font-medium px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          style="background-color: var(--danger); color: #fff"
+        >
+          Eliminar
+        </button>
+      </div>
+    </div>
+  </div>
+  }
+</div>

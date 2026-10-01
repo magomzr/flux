@@ -1,0 +1,51 @@
+<div class="p-6 max-w-5xl mx-auto">
+  <!-- Header del proyecto -->
+  @if (project()) {
+  <div class="mb-6">
+    <div class="flex items-center gap-2 text-xs mb-2" style="color: var(--text-muted)">
+      <a
+        routerLink="/projects"
+        class="hover:text-white transition-colors cursor-pointer"
+        style="color: var(--text-muted)"
+        >Proyectos</a
+      >
+      <span>/</span>
+      <span style="color: var(--text-primary)">{{ project()!.name }}</span>
+    </div>
+    <h1 class="text-lg font-semibold" style="color: var(--text-primary)">{{ project()!.name }}</h1>
+    @if (project()!.description) {
+    <p class="text-sm mt-0.5" style="color: var(--text-muted)">{{ project()!.description }}</p>
+    }
+  </div>
+  }
+
+  <!-- Tabs -->
+  <nav class="flex gap-1 mb-6 border-b" style="border-color: var(--border)">
+    <a
+      [routerLink]="['environments']"
+      routerLinkActive="border-b-2 border-indigo-500"
+      class="text-sm px-3 pb-3 -mb-px transition-colors hover:text-zinc-200"
+      style="color: var(--text-secondary)"
+    >
+      Ambientes
+    </a>
+    <a
+      [routerLink]="['flags']"
+      routerLinkActive="border-b-2 border-indigo-500"
+      class="text-sm px-3 pb-3 -mb-px transition-colors hover:text-zinc-200"
+      style="color: var(--text-secondary)"
+    >
+      Flags
+    </a>
+    <a
+      [routerLink]="['sdk-keys']"
+      routerLinkActive="border-b-2 border-indigo-500"
+      class="text-sm px-3 pb-3 -mb-px transition-colors hover:text-zinc-200"
+      style="color: var(--text-secondary)"
+    >
+      SDK Keys
+    </a>
+  </nav>
+
+  <router-outlet />
+</div>
