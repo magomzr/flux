@@ -20,7 +20,7 @@ import type { Project } from "../../core/models/api.models";
               routerLink="/projects"
               class="hover:text-white transition-colors cursor-pointer"
               style="color: var(--text-muted)"
-              >Projects</a
+              >Proyectos</a
             >
             <span>/</span>
             <span style="color: var(--text-primary)">{{
@@ -46,7 +46,7 @@ import type { Project } from "../../core/models/api.models";
           class="text-sm px-3 pb-3 -mb-px transition-colors hover:text-zinc-200"
           style="color: var(--text-secondary)"
         >
-          Environments
+          Ambientes
         </a>
         <a
           [routerLink]="['flags']"
