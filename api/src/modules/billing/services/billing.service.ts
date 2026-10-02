@@ -1,13 +1,6 @@
-import {
-  ConflictException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { and, desc, eq, isNull, or, gt } from 'drizzle-orm';
 import { plans, tenantSubscriptions, usageRecords } from '../../../db/schema';
-import { CreatePlanDto } from '../dto/create-plan.dto';
-import { SubscribeDto } from '../dto/subscribe.dto';
 import type { Db } from '../../../db';
 
 const OVERAGE = {
@@ -15,42 +8,11 @@ const OVERAGE = {
   storageMbPerMonth: 2,
 } as const;
 
-const FLAT_RATE_PLANS = new Set(['starter', 'studio']);
+const FLAT_RATE_PLANS = new Set(['starter']);
 
 @Injectable()
 export class BillingService {
   constructor(@Inject('DB') private readonly db: Db) {}
-
-  async createPlan(dto: CreatePlanDto) {
-    const existing = await this.db.query.plans.findFirst({
-      where: eq(plans.id, dto.id),
-    });
-
-    if (existing) {
-      throw new ConflictException(`Plan "${dto.id}" already exists`);
-    }
-
-    const [plan] = await this.db
-      .insert(plans)
-      .values({
-        id: dto.id,
-        name: dto.name,
-        maxFlags: dto.maxFlags ?? null,
-        maxProjects: dto.maxProjects ?? null,
-        maxEnvironments: dto.maxEnvironments ?? null,
-        maxEvaluationsMonth: dto.maxEvaluationsMonth ?? null,
-        maxAssetStorageMb: dto.maxAssetStorageMb ?? null,
-        hasSse: dto.hasSse ?? false,
-        priceUsd: dto.priceUsd ?? 0,
-      })
-      .returning();
-
-    return plan;
-  }
-
-  async findAllPlans() {
-    return this.db.query.plans.findMany();
-  }
 
   async findPlan(id: string) {
     const plan = await this.db.query.plans.findFirst({
@@ -60,30 +22,6 @@ export class BillingService {
     if (!plan) throw new NotFoundException(`Plan "${id}" not found`);
 
     return plan;
-  }
-
-  async subscribe(tenantId: string, dto: SubscribeDto) {
-    await this.findPlan(dto.planId);
-
-    const active = await this.getActiveSubscription(tenantId);
-
-    if (active?.planId === dto.planId) {
-      throw new ConflictException(`Tenant is already on plan "${dto.planId}"`);
-    }
-
-    if (active) {
-      await this.db
-        .update(tenantSubscriptions)
-        .set({ endsAt: new Date() })
-        .where(eq(tenantSubscriptions.id, active.id));
-    }
-
-    const [subscription] = await this.db
-      .insert(tenantSubscriptions)
-      .values({ tenantId, planId: dto.planId })
-      .returning();
-
-    return subscription;
   }
 
   async getActiveSubscription(tenantId: string) {
@@ -101,14 +39,7 @@ export class BillingService {
     });
   }
 
-  async getSubscriptionHistory(tenantId: string) {
-    return this.db.query.tenantSubscriptions.findMany({
-      where: eq(tenantSubscriptions.tenantId, tenantId),
-      orderBy: desc(tenantSubscriptions.startedAt),
-    });
-  }
-
-  async getActivePlan(tenantId: string) {
+  private async getActivePlan(tenantId: string) {
     const subscription = await this.getActiveSubscription(tenantId);
 
     if (!subscription) return null;
@@ -202,12 +133,5 @@ export class BillingService {
         breakdown,
       },
     };
-  }
-
-  async getUsageHistory(tenantId: string) {
-    return this.db.query.usageRecords.findMany({
-      where: eq(usageRecords.tenantId, tenantId),
-      orderBy: desc(usageRecords.periodStart),
-    });
   }
 }

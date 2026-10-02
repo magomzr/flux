@@ -20,28 +20,6 @@ const PLANS = [
     hasSse: false,
     priceUsd: 0,
   },
-  {
-    id: 'studio',
-    name: 'Studio',
-    maxFlags: 500,
-    maxProjects: null as number | null,
-    maxEnvironments: 10,
-    maxEvaluationsMonth: null as number | null,
-    maxAssetStorageMb: null as number | null,
-    hasSse: true,
-    priceUsd: 4900,
-  },
-  {
-    id: 'scale',
-    name: 'Scale',
-    maxFlags: null as number | null,
-    maxProjects: null as number | null,
-    maxEnvironments: null as number | null,
-    maxEvaluationsMonth: 1_000_000,
-    maxAssetStorageMb: 5000,
-    hasSse: true,
-    priceUsd: 9900,
-  },
 ] as const;
 
 @Injectable()

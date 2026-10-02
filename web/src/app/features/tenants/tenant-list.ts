@@ -65,15 +65,6 @@ export class TenantList implements OnInit {
 
   ngOnInit() {
     this.load();
-    this.billingService.getPlans().subscribe({
-      next: (data) => {
-        this.plans.set(data);
-        // Pre-select first plan
-        if (data.length > 0 && !this.form.value.planId) {
-          this.form.patchValue({ planId: data[0].id });
-        }
-      },
-    });
   }
 
   private load() {
@@ -99,11 +90,6 @@ export class TenantList implements OnInit {
       next: (response: any) => {
         const { admin: _admin, ...tenant } = response;
         this.tenants.update((list) => [tenant, ...list]);
-
-        // Suscribir al plan seleccionado
-        if (planId) {
-          this.billingService.subscribe(tenant.id, planId).subscribe();
-        }
 
         this.newCredentials.set({
           tenantName: tenant.name,
@@ -137,13 +123,6 @@ export class TenantList implements OnInit {
     if (!tenant || !planId) return;
 
     this.planSaving.set(true);
-    this.billingService.subscribe(tenant.id, planId).subscribe({
-      next: () => {
-        this.cancelChangePlan();
-        this.planSaving.set(false);
-      },
-      error: () => this.planSaving.set(false),
-    });
   }
 
   cancelChangePlan() {

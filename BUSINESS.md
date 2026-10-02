@@ -42,11 +42,13 @@ Valor: control total sobre tu producto sin depender de un ciclo de deploy.
 Una empresa te contrata para construir su software. Al entregar, les ofreces Flux como servicio adicional.
 
 El cliente obtiene:
+
 - Control directo sobre funcionalidades de su producto sin necesitar al equipo de desarrollo para cada cambio
 - Capacidad de hacer rollouts graduales y revertir en segundos si algo falla
 - Un dashboard propio para gestionar su configuración
 
 Tú obtienes:
+
 - Ingreso recurrente mensual independiente del proyecto
 - Una razón para mantener la relación con el cliente después de la entrega
 - Visibilidad sobre cómo el cliente usa su propio producto
@@ -72,24 +74,6 @@ Eso es una propuesta de valor clara, no un costo de mantenimiento difuso. El cli
 - No lo presentes como "mantenimiento" — eso suena a costo, no a valor
 - No lo incluyas gratis en el contrato de desarrollo — eso establece la expectativa de que es parte del servicio base
 - No lo vendas como algo técnico — véndelo como control operativo para el negocio
-
----
-
-## Los planes y a quién van dirigidos
-
-| Plan | Precio | Para quién |
-|---|---|---|
-| **Starter** | $0 | Tu uso interno. Absorbes el costo como parte de tu operación. |
-| **Studio** | $49/mes | Clientes de desarrollo a medida. Precio fijo, sin medidores, sin sorpresas. |
-| **Scale** | $99/mes + overage | Empresas externas que contratan Flux directamente como SaaS. |
-
-**Por qué Studio no tiene medidores de evaluaciones:**
-
-El cliente de desarrollo a medida no eligió Flux — tú se lo ofreciste como parte del servicio. Cobrarle overage por usar bien el producto crea fricción y conversaciones incómodas. El precio fijo de $49 es predecible para el cliente y rentable para ti: tu costo de infraestructura por cliente en este tier es ~$5-8/mes, lo que te deja un margen de 85%+.
-
-**Por qué Scale sí tiene medidores:**
-
-Una empresa externa que integra Flux en su propio producto puede generar volúmenes de uso muy variables. Los medidores protegen tu margen cuando el uso escala significativamente.
 
 ---
 
@@ -123,31 +107,14 @@ Eso no suena a venta — suena a recomendación. Y las recomendaciones cierran c
 
 ---
 
-## Cómo escalar el negocio
-
-El modelo tiene tres palancas de crecimiento:
-
-**Más clientes de desarrollo** → más tenants en Studio → ingreso recurrente que crece con cada proyecto entregado.
-
-**Clientes externos (Scale)** → no requieren relación de desarrollo previa. Se adquieren por marketing directo, referidos, o presencia en comunidades de desarrollo.
-
-**Upsell dentro de clientes existentes** → un cliente que empieza en Studio y crece puede necesitar más proyectos, más ambientes, o funcionalidades del tier Scale. La transición es natural y no requiere una nueva venta.
-
----
-
 ## Números reales para arrancar
 
-| Concepto | Valor |
-|---|---|
-| Costo de infraestructura (Railway, 1 instancia) | ~$10/mes |
-| Primer cliente Studio | $49/mes |
-| Margen con 1 cliente | ~$39/mes (80%) |
-| Break-even | Desde el primer cliente |
-| Con 2 clientes Studio | ~$88/mes de margen neto |
-| Con 5 clientes Studio | ~$235/mes de margen neto |
-| Con 2 Studio + 1 Scale | ~$177/mes de margen neto |
+| Concepto                                        | Valor                   |
+| ----------------------------------------------- | ----------------------- |
+| Costo de infraestructura (Railway, 1 instancia) | ~$10/mes                |
+| Break-even                                      | Desde el primer cliente |
 
-Estos números asumen que no subes la infraestructura. Con 5-8 clientes probablemente necesitas escalar a ~$25-35/mes de infra, pero el margen sigue siendo amplio.
+Estos números asumen que no subes la infraestructura.
 
 ---
 
@@ -161,22 +128,13 @@ Estos números asumen que no subes la infraestructura. Con 5-8 clientes probable
 
 ## Estrategia de producto — el orden correcto
 
-Flux siguió la estrategia más sólida para construir un producto de software: úsalo tú primero.
+Flux siguió la estrategia más sólida para construir un producto de software: úsalo tú primero. Lo usas en tus propios proyectos y desarrollos. Sufres tus propios problemas, encuentras los edge cases reales, lo mejoras. No estás adivinando qué necesita el mercado — ya sabes qué necesitas tú.
 
-**Etapa 1 — Flux para uso interno**
-Lo usas en tus propios proyectos y desarrollos. Sufres tus propios problemas, encuentras los edge cases reales, lo mejoras. No estás adivinando qué necesita el mercado — ya sabes qué necesitas tú.
-
-**Etapa 2 — Flux para clientes Studio**
-Cuando ya confías en él porque lo probaste en producción propia, lo ofreces a tus clientes de desarrollo como parte del servicio. El riesgo es mínimo porque el producto ya está validado. El cliente recibe algo maduro, no un experimento.
-
-**Etapa 3 — Flux para el mercado externo (Scale)**
-Cuando el producto está probado en múltiples contextos reales, lo abres al mercado externo con confianza. Aquí compites con LaunchDarkly, Unleash y similares, con la ventaja de ser más simple, más económico, y con soporte de alguien que realmente conoce el producto.
-
-Cada etapa financia y valida la siguiente. No hay riesgo de venderle algo a un cliente que no funciona, porque ya lo probaste contigo mismo. Y cuando llegues a la etapa 3, tienes casos de uso reales para mostrar — no demos fabricados.
+No hay riesgo de venderle algo a un cliente que no funciona, porque ya lo probaste contigo mismo.
 
 **El siguiente producto sigue el mismo patrón.**
 Cuando identifiques el siguiente problema que tienes tú mismo en tus desarrollos — notificaciones, analytics, autenticación — lo construyes primero para ti, lo maduras, y luego lo llevas al cliente. Con el tiempo, eso se convierte en un ecosistema de herramientas que ninguna empresa de desarrollo de la competencia puede replicar fácilmente.
 
 ---
 
-*Este documento es interno. Actualizar cuando cambien los planes, precios de infraestructura, o la estrategia comercial.*
+_Este documento es interno. Actualizar cuando cambien los planes, precios de infraestructura, o la estrategia comercial._

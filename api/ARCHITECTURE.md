@@ -12,14 +12,14 @@ Flux expone dos APIs completamente separadas desde el mismo proceso:
 
 ```
 ┌──────────────────────────────────────────────────────┐
-│                    flux-api (NestJS)                  │
+│                    flux-api (NestJS)                 │
 │                                                      │
 │  Dashboard API                SDK API                │
 │  ─────────────                ────────               │
 │  JWT RS256 auth               API Key auth           │
 │  CRUD de recursos             GET /sdk/flags         │
 │  Audit, billing, users        GET /sdk/flags/:key    │
-│  Gestión de flags/envs        SSE /sdk/stream        │
+│  Gestión de flags/envs                               │
 │                                                      │
 │  Consumido por:               Consumido por:         │
 │  web/ (Angular dashboard)     SDK del cliente        │
@@ -91,15 +91,6 @@ SDK.refresh()  → 1 HTTP request (condicional, 304 si nada cambió)
 ```
 
 Opcionalmente se puede activar `autoRefresh` para background refresh, pero no es el default.
-
-### Billing
-
-Tres planes con lógica diferenciada:
-
-- **Starter / Studio**: precio fijo, sin medidores de evaluaciones. El `UsageCounterService` cuenta evaluaciones pero el `BillingService` ignora el overage para estos planes.
-- **Scale**: precio base + overage por evaluaciones y storage sobre el límite.
-
-Los planes se definen en código (`billing.seed.ts`) con upsert al arrancar. Cambios de precios/límites se versionan en git.
 
 ---
 

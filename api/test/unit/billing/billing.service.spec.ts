@@ -1,18 +1,6 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { BillingService } from '../../../src/modules/billing/services/billing.service';
-
-const mockPlanFree = {
-  id: 'starter',
-  name: 'Starter',
-  maxFlags: 50,
-  maxProjects: 1,
-  maxEnvironments: 3,
-  maxEvaluationsMonth: null,
-  maxAssetStorageMb: null,
-  hasSse: false,
-  priceUsd: 0,
-};
 
 const mockPlanStudio = {
   id: 'studio',
@@ -87,66 +75,6 @@ describe('BillingService', () => {
       await expect(service.findPlan('nonexistent')).rejects.toThrow(
         NotFoundException,
       );
-    });
-  });
-
-  describe('createPlan', () => {
-    it('throws ConflictException when plan already exists', async () => {
-      mockDb.query.plans.findFirst.mockResolvedValue(mockPlanScale);
-
-      await expect(
-        service.createPlan({ id: 'scale', name: 'Scale', priceUsd: 9900 }),
-      ).rejects.toThrow(ConflictException);
-    });
-
-    it('creates plan when it does not exist', async () => {
-      mockDb.query.plans.findFirst.mockResolvedValue(null);
-      const insertReturning = jest.fn().mockResolvedValue([mockPlanScale]);
-      mockDb.insert.mockReturnValue({
-        values: jest.fn().mockReturnValue({ returning: insertReturning }),
-      });
-
-      const result = await service.createPlan({
-        id: 'scale',
-        name: 'Scale',
-        priceUsd: 9900,
-      });
-      expect(result).toEqual(mockPlanScale);
-    });
-  });
-
-  describe('subscribe', () => {
-    it('throws ConflictException when tenant is already on the same plan', async () => {
-      mockDb.query.plans.findFirst.mockResolvedValue(mockPlanStudio);
-      mockDb.query.tenantSubscriptions.findFirst.mockResolvedValue(
-        mockSubscription,
-      );
-
-      await expect(
-        service.subscribe('tenant-1', { planId: 'studio' }),
-      ).rejects.toThrow(ConflictException);
-    });
-
-    it('closes previous subscription and creates new one when changing plan', async () => {
-      mockDb.query.plans.findFirst.mockResolvedValue(mockPlanScale);
-      mockDb.query.tenantSubscriptions.findFirst.mockResolvedValue(
-        mockSubscription,
-      );
-
-      const newSub = { ...mockSubscription, planId: 'scale' };
-      const insertReturning = jest.fn().mockResolvedValue([newSub]);
-      mockDb.insert.mockReturnValue({
-        values: jest.fn().mockReturnValue({ returning: insertReturning }),
-      });
-      const updateWhere = jest.fn().mockResolvedValue([]);
-      mockDb.update.mockReturnValue({
-        set: jest.fn().mockReturnValue({ where: updateWhere }),
-      });
-
-      const result = await service.subscribe('tenant-1', { planId: 'scale' });
-
-      expect(mockDb.update).toHaveBeenCalled();
-      expect(result.planId).toBe('scale');
     });
   });
 

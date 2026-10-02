@@ -12,16 +12,6 @@ It was built first as an internal tool — used in production on our own project
 
 ---
 
-## Who it's for
-
-| User                             | How they use Flux                                             |
-| -------------------------------- | ------------------------------------------------------------- |
-| **Internal (Starter)**           | Managing flags across your own products and client projects   |
-| **Development clients (Studio)** | Controlling their app's features without calling the dev team |
-| **External companies (Scale)**   | Using Flux as a standalone feature flagging service           |
-
----
-
 ## Monorepo structure
 
 ```
@@ -59,7 +49,7 @@ The SDK (`@flux/js`, `@flux/angular`) lives in separate repositories — it's a 
 - Full CRUD: tenants, projects, environments, flags, flag values
 - SDK API — in-memory cache (L1/L2), ETag, conditional GET, SSE
 - SDK API keys — generation, bcrypt hash, revocation
-- Billing — Starter / Studio / Scale plans, usage tracking, cost forecast
+- Billing — usage tracking, cost forecast
 - Audit log — immutable, queryable by entity and action
 - Dashboard UI — projects, flags, environments, SDK keys, billing, audit
 - Light/dark mode with CSS variables
@@ -71,20 +61,6 @@ The SDK (`@flux/js`, `@flux/angular`) lives in separate repositories — it's a 
 - User management per tenant (CRUD from dashboard)
 - Auto-create `tenant_admin` when creating a tenant
 - SDK packages (`@flux/js`, `@flux/angular`)
-
----
-
-## Business model
-
-Flux uses a three-tier pricing model designed around how clients actually use it:
-
-- **Starter** — $0/mo. Internal use, 1 project, no SSE, no overage.
-- **Studio** — $49/mo flat. For development clients. Unlimited projects, SSE included, no usage meters. Fixed price, no surprises.
-- **Scale** — $99/mo base + overage. For external companies. Everything unlimited, with evaluation and storage meters.
-
-Studio has no usage meters by design — the cost of delivery is absorbed in the development contract margin. Scale has meters because external clients can generate unpredictable volumes.
-
-→ Full commercial strategy and positioning: [BUSINESS.md](./BUSINESS.md)
 
 ---
 

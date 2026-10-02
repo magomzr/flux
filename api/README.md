@@ -13,7 +13,6 @@ El modelo de negocio contempla:
 - Capa gratuita con límites de flags, evaluaciones y sin acceso a SSE.
 - Planes de pago con polling más frecuente, SSE en tiempo real, y más recursos.
 - Facturación por uso (evaluaciones sobre el límite, storage de assets, conexiones SSE).
-- Calculadora de costos interactiva para que el cliente estime su gasto antes de contratar.
 
 ---
 
@@ -86,7 +85,7 @@ flux-backend/
 │   │   ├── flags/             # CRUD de flags, tipos, valores por ambiente, reglas de activación
 │   │   ├── assets/            # upload y gestión de archivos estáticos en R2/S3
 │   │   ├── delivery/          # cache en memoria, evaluación de flags, REST polling, SSE
-│   │   ├── billing/           # planes, suscripciones, registro de uso, calculadora de costos
+│   │   ├── billing/           # registro de uso
 │   │   └── audit/             # log inmutable de acciones en el dashboard
 │   │
 │   ├── app.module.ts
@@ -137,7 +136,7 @@ El módulo más importante técnicamente y el candidato a convertirse en servici
 
 ### `billing`
 
-Controla los planes disponibles, las suscripciones activas por tenant, y el registro de consumo mensual (evaluaciones, conexiones SSE, storage). Expone la calculadora de costos. Es consultado por `delivery` y por `flags` para verificar límites del plan antes de permitir operaciones.
+Controla el registro de consumo mensual (evaluaciones, storage). Es consultado por `delivery` y por `flags` para verificar límites del plan antes de permitir operaciones.
 
 ### `audit`
 
@@ -230,10 +229,6 @@ GET  /sdk/flags
 
 GET  /sdk/flags/:key
      Evaluación de un flag específico.
-
-SSE  /sdk/stream
-     Conexión persistente. Notifica cuando cambia cualquier flag del ambiente.
-     Solo disponible en plan Studio/Scale.
 ```
 
 ### Modelo de delivery: on-demand, sin polling
@@ -241,6 +236,7 @@ SSE  /sdk/stream
 Flux NO usa polling automático desde la SDK. La decisión de cuándo refrescar los flags es del developer que integra la SDK, no del sistema.
 
 **¿Por qué?**
+
 - Un cambio de flag raramente necesita propagarse en segundos a usuarios activos.
 - El caso más común es: "activé esta feature, los nuevos usuarios que entren la verán" — eso funciona con carga al iniciar.
 - El polling consume recursos del servidor y del cliente sin beneficio claro para la mayoría de casos.
@@ -248,7 +244,7 @@ Flux NO usa polling automático desde la SDK. La decisión de cuándo refrescar 
 
 **Cómo funciona la SDK:**
 
-```typescript
+````typescript
 // 1. Inicialización — carga flags una vez
 SDK.init({ apiKey: 'flux_production_...' });
 
@@ -259,12 +255,8 @@ const title = SDK.getFlag('title');
 // Opciones naturales: al navegar, al hacer login, al volver del background
 await SDK.refresh();
 
-// 4. SSE (plan Studio/Scale) — opcional
-// Para kill switches o cambios que deben propagarse instantáneamente
-SDK.connect(); // abre conexión SSE → actualizaciones push
-```
-
 **Momentos recomendados para llamar `refresh()`:**
+
 - Al inicializar la app
 - Al hacer login / cambiar de usuario
 - Al navegar a una sección nueva (SPA)
@@ -304,7 +296,7 @@ R2_BUCKET=
 # App
 PORT=3000
 NODE_ENV=development
-```
+````
 
 ---
 

@@ -8,7 +8,7 @@
 - [x] Multi-tenant con ownership check centralizado (`TenantGuard`)
 - [x] Auth: JWT RS256, refresh tokens con revocación por familia, change password
 - [x] Módulos: tenants, projects, environments, flags, flag-values, sdk-keys, billing, delivery, audit, users
-- [x] Billing: planes (Starter/Studio/Scale), suscripciones, usage forecast, seed con upsert
+- [x] Billing: usage forecast, seed con upsert
 - [x] Delivery: cache en memoria L1/L2, ETag, conditional GET, SSE, usage counter
 - [x] Audit: log inmutable con userEmail, consulta por filtros, JSON metadata
 - [x] Users: CRUD por tenant, reset password, auto-create admin al crear tenant
@@ -24,7 +24,6 @@
 
 - [x] Planes definidos en código con upsert al arrancar (no UI de gestión)
 - [x] `pollIntervalSeconds` eliminado — SDK usa on-demand + refresh manual
-- [x] Overage solo aplica al plan Scale (Starter/Studio son flat rate)
 - [x] Audit log guarda `userEmail` como snapshot inmutable
 
 ---

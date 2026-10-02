@@ -18,7 +18,6 @@ export class Billing implements OnInit {
   readonly subscriptions = signal<Subscription[]>([]);
   readonly estimates = signal<CostEstimate[]>([]);
   readonly loadingUsage = signal(true);
-  readonly calculating = signal(false);
 
   // % de evaluaciones usadas vs límite del plan
   readonly evalPct = computed(() => {

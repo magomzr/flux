@@ -112,7 +112,7 @@ export class ApiKeyCacheService {
     return rows.map((row) => ({
       environmentId: row.environmentId,
       tenantId: row.tenantId,
-      hasSse: row.hasSse,
+      hasSse: false,
       expiresAt: row.expiresAt,
       _hash: row.keyHash,
     }));

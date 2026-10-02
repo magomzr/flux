@@ -7,7 +7,7 @@ import {
 import { eq } from 'drizzle-orm';
 import { CreateTenantDto } from '../dto/create-tenant.dto';
 import { UpdateTenantDto } from '../dto/update.tenant.dto';
-import { tenants } from '../../../db/schema';
+import { tenants, tenantSubscriptions } from '../../../db/schema';
 import { AuditService } from '../../audit/services/audit.service';
 import { AuditAction } from '../../audit/audit.types';
 import { UsersService } from '../../users/services/users.service';
@@ -47,6 +47,10 @@ export class TenantsService {
       password: dto.admin.password,
       role: 'tenant_admin',
     });
+
+    await this.db
+      .insert(tenantSubscriptions)
+      .values({ tenantId: tenant.id, planId: 'starter' });
 
     await this.audit.log({
       action: AuditAction.TENANT_CREATED,

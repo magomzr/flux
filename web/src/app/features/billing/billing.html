@@ -136,15 +136,6 @@
           <p class="text-xs mt-0.5" style="color: var(--text-muted)">estimado a fin de mes</p>
         </div>
       </div>
-
-      <!-- SSE -->
-      <div>
-        <p class="text-xs mb-2" style="color: var(--text-muted)">conexiones SSE (pico)</p>
-        <p class="text-lg font-semibold" style="color: var(--text-primary)">
-          {{ usage()!.actual.sseConnectionsMax | number }}
-        </p>
-        <p class="text-xs mt-0.5" style="color: var(--text-muted)">máx. concurrentes este mes</p>
-      </div>
     </div>
   </div>
   } @if (loadingUsage()) {
